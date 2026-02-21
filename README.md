@@ -59,3 +59,53 @@ Do not use it for unauthorized or malicious activity.
 🔥 Vision
 Static vulnerable applications are limited.
 LLMForge enables dynamic, adaptive, AI-driven security training — built for the next generation of cybersecurity challenges.
+
+
+**Quick Start (Docker-first - recommended)**
+
+- **docker compose (recommended for development)**
+
+```bash
+docker compose up --build -d
+```
+
+Notes:
+- The LLM runtime (`ollama`) and the `llmforge` gateway run in separate containers. Running the app image alone is not supported unless you provide a compatible `ollama` CLI and runtime accessible to the container.
+- Use `docker compose` (above) to start both services together. The compose file also contains profile-based helper services to pull models.
+
+
+**Health check**
+
+```bash
+curl http://localhost:8000/health
+```
+
+**Generate example**
+
+```bash
+curl -X POST http://localhost:8000/generate \
+	-H "Content-Type: application/json" \
+	-d '{"prompt":"Say hello"}'
+```
+
+Notes:
+- The gateway currently forwards prompts to the `ollama` CLI via subprocess. The recommended way to run both the runtime and gateway together is via `docker compose` so the CLI/runtime are available.
+- `OLLAMA_MODEL` controls which pulled model the gateway will target. Use the compose profiles (below) to pull models into the `ollama` runtime.
+
+**Docker Compose Profiles (select model sets)**
+
+You can selectively pull models using Docker Compose profiles. Examples:
+
+- Start the app + Ollama and pull `llama3`:
+
+```bash
+docker compose --profile llama up --build -d
+```
+
+- Start the app + Ollama and pull `mistral`:
+
+```bash
+docker compose --profile mistral up --build -d
+```
+
+Profiles create small helper services (`ollama-init-<name>`) that run `ollama pull` after the runtime starts, keeping the compose file clean and flexible.
