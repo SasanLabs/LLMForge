@@ -1,0 +1,35 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
+  ollama-init-llama:
+    image: ollama/ollama:latest
+    profiles: ["llama"]
+    depends_on:
+      - ollama
+    entrypoint: sh -c "sleep 5 && ollama pull llama3"
+
+  ollama-init-mistral:
+    image: ollama/ollama:latest
+    profiles: ["mistral"]
+    depends_on:
+      - ollama
+    entrypoint: sh -c "sleep 5 && ollama pull mistral"
+
+  llmforge:
+    build: .
+    image: llmforge:dev
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3}
+    depends_on:
+      - ollama
+    volumes:
+      - .:/app:cached
+    restart: unless-stopped
+volumes:
+  ollama_data:
