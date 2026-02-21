@@ -44,6 +44,25 @@ services:
         echo "Server ready! Pulling mistral..."
         ollama pull mistral
 
+  ollama-init-mini:
+    image: ollama/ollama:latest
+    profiles: ["mini"]
+    depends_on:
+      - ollama
+    environment:
+      - OLLAMA_HOST=ollama:11434
+    entrypoint: /bin/sh
+    command:
+      - "-c"
+      - |
+        echo "Waiting for Ollama server..."
+        until ollama list > /dev/null 2>&1; do
+          sleep 2
+        done
+        echo "Server ready! Pulling mini..."
+        ollama pull mini
+
+
   llmforge:
     build: .
     image: llmforge:dev
