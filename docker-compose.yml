@@ -1,23 +1,48 @@
 services:
   ollama:
     image: ollama/ollama:latest
+    container_name: ollama
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped
-
+    ports:
+      - "11434:11434"
+  
   ollama-init-llama:
     image: ollama/ollama:latest
     profiles: ["llama"]
     depends_on:
       - ollama
-    entrypoint: sh -c "sleep 5 && ollama pull llama3"
+    environment:
+      - OLLAMA_HOST=ollama:11434 # This tells it where to find the server
+    entrypoint: /bin/sh
+    command:
+      - "-c"
+      - |
+        echo "Waiting for Ollama server..."
+        until ollama list > /dev/null 2>&1; do
+          sleep 2
+        done
+        echo "Server ready! Pulling llama3..."
+        ollama pull llama3
 
   ollama-init-mistral:
     image: ollama/ollama:latest
     profiles: ["mistral"]
     depends_on:
       - ollama
-    entrypoint: sh -c "sleep 5 && ollama pull mistral"
+    environment:
+      - OLLAMA_HOST=ollama:11434 # Crucial fix
+    entrypoint: /bin/sh
+    command:
+      - "-c"
+      - |
+        echo "Waiting for Ollama server..."
+        until ollama list > /dev/null 2>&1; do
+          sleep 2
+        done
+        echo "Server ready! Pulling mistral..."
+        ollama pull mistral
 
   llmforge:
     build: .
@@ -25,11 +50,13 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3}
+      - OLLAMA_URL=http://ollama:11434
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-mistral}
     depends_on:
       - ollama
     volumes:
       - .:/app:cached
     restart: unless-stopped
+
 volumes:
   ollama_data:
