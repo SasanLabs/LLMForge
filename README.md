@@ -99,13 +99,23 @@ You can selectively pull models using Docker Compose profiles. Examples:
 - Start the app + Ollama and pull `llama3`:
 
 ```bash
-docker compose --profile llama up --build -d
+export MODEL_PROFILE=llama3
+docker compose --profile llama up --build
 ```
 
 - Start the app + Ollama and pull `mistral`:
 
 ```bash
-docker compose --profile mistral up --build -d
+export MODEL_PROFILE=mistral:7b-instruct-q4_0
+docker compose up --build
+
+```
+- Start the app + Ollama and pull `mini`:
+
+
+```bash
+export MODEL_PROFILE=phi3:mini
+docker compose up --build
 ```
 
 Profiles create small helper services (`ollama-init-<name>`) that run `ollama pull` after the runtime starts, keeping the compose file clean and flexible.
