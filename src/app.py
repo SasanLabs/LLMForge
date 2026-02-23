@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 # Use the service name defined in your docker-compose.yml
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
-DEFAULT_MODEL = os.getenv("OLLAMA_MODEL", "mistral")
+DEFAULT_MODEL = os.getenv("OLLAMA_MODEL", "phi3:mini")
 
 app = FastAPI(title="LLMForge Gateway")
 

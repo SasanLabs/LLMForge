@@ -1,4 +1,5 @@
 services:
+  # Ollama server
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
@@ -7,50 +8,15 @@ services:
     restart: unless-stopped
     ports:
       - "11434:11434"
-  
-  ollama-init-llama:
-    image: ollama/ollama:latest
-    profiles: ["llama"]
-    depends_on:
-      - ollama
-    environment:
-      - OLLAMA_HOST=ollama:11434 # This tells it where to find the server
-    entrypoint: /bin/sh
-    command:
-      - "-c"
-      - |
-        echo "Waiting for Ollama server..."
-        until ollama list > /dev/null 2>&1; do
-          sleep 2
-        done
-        echo "Server ready! Pulling llama3..."
-        ollama pull llama3
 
-  ollama-init-mistral:
+  # Dynamic Ollama init: pulls whatever profile/model you specify
+  ollama-init:
     image: ollama/ollama:latest
-    profiles: ["mistral"]
-    depends_on:
-      - ollama
-    environment:
-      - OLLAMA_HOST=ollama:11434 # Crucial fix
-    entrypoint: /bin/sh
-    command:
-      - "-c"
-      - |
-        echo "Waiting for Ollama server..."
-        until ollama list > /dev/null 2>&1; do
-          sleep 2
-        done
-        echo "Server ready! Pulling mistral..."
-        ollama pull mistral
-
-  ollama-init-mini:
-    image: ollama/ollama:latest
-    profiles: ["mini"]
     depends_on:
       - ollama
     environment:
       - OLLAMA_HOST=ollama:11434
+      - MODEL_PROFILE=${MODEL_PROFILE:-phi3:mini}  # default to mini
     entrypoint: /bin/sh
     command:
       - "-c"
@@ -59,10 +25,11 @@ services:
         until ollama list > /dev/null 2>&1; do
           sleep 2
         done
-        echo "Server ready! Pulling mini..."
-        ollama pull mini
+        echo "Server ready! Pulling model for profile '$MODEL_PROFILE'..."
+        ollama pull $MODEL_PROFILE
+        echo "Model $MODEL_PROFILE pulled successfully. Exiting init container."
 
-
+  # Your FastAPI app (LLMForge)
   llmforge:
     build: .
     image: llmforge:dev
@@ -70,9 +37,10 @@ services:
       - "8000:8000"
     environment:
       - OLLAMA_URL=http://ollama:11434
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-mistral}
+      - OLLAMA_MODEL=${MODEL_PROFILE:-phi3:mini}  # Default matches init
     depends_on:
       - ollama
+      - ollama-init
     volumes:
       - .:/app:cached
     restart: unless-stopped
