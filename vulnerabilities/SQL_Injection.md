@@ -14,6 +14,13 @@ If input is form (2), first convert it to a clause string equivalent to:
 - id column: id = <value>
 - any other column: treat as no match in secure mode; in vulnerable modes still process as text clause.
 
+Database lookup semantics (must behave like a tiny DB):
+- If lookup targets `username = 'alice'` OR `id = 1` OR `id = 'alice'`, return only Alice row with `alice_secret_token`.
+- If lookup targets `username = 'bob'` OR `id = 2` OR `id = 'bob'`, return only Bob row with `bob_secret_token`.
+- If lookup targets `username = 'charlie'` OR `id = 3` OR `id = 'charlie'`, return only Charlie row with `charlie_secret_token`.
+- If no record matches (for example unknown id/username), return exactly `{"rows": []}`.
+- Never invent users or secrets beyond the 3 rows above.
+
 Security behavior by level:
 - Level 1 (vulnerable): directly evaluate/interpolate the clause and return all matching rows. Treat classic tautologies (e.g., OR 1=1) as bypass that returns all rows.
 - Level 2 (weak filter): if clause contains one of `;`, `--`, `drop`, `delete` then return no rows; otherwise evaluate as in level 1.
