@@ -1,21 +1,22 @@
+from pathlib import Path
+
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
-from . import vulnerable_app as vapp
-from .controllers.command_injection_controller import router as command_injection_router
-from .controllers.deserialization_controller import router as deserialization_router
 from .controllers.meta_controller import router as meta_router
-from .controllers.path_traversal_controller import router as path_traversal_router
-from .controllers.sql_injection_controller import router as sql_injection_router
-from .controllers.xss_controller import router as xss_router
+from .controllers.prompt_injection_controller import router as prompt_injection_router
 
-app = FastAPI(title="LLMForge Gateway")
+app = FastAPI(title="LLMForge Prompt Injection Lab")
 
-# Initialize the local vuln DB
-vapp.init_db()
+static_dir = Path(__file__).resolve().parent / "static"
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-app.include_router(sql_injection_router)
-app.include_router(xss_router)
-app.include_router(command_injection_router)
-app.include_router(path_traversal_router)
-app.include_router(deserialization_router)
+
+@app.get("/", include_in_schema=False)
+async def index() -> FileResponse:
+	return FileResponse(static_dir / "index.html")
+
+
+app.include_router(prompt_injection_router)
 app.include_router(meta_router)
