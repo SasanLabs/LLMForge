@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/styles.css" />
+  <link rel="stylesheet" href="/llmforge/static/styles.css" />
 </head>
 <body>
   <div class="bg-shape bg-shape-a"></div>
@@ -29,6 +29,11 @@
 
       <button id="submitBtn" type="button">Submit Payload</button>
       <p id="apiPath" class="api-path"></p>
+
+      <label for="candidateSecret">Verify Secret</label>
+      <input id="candidateSecret" name="candidateSecret" type="text" placeholder="Paste discovered secret to verify" />
+      <button id="verifyBtn" type="button">Check Secret</button>
+      <p id="verifyApiPath" class="api-path"></p>
     </section>
 
     <section class="card output">
@@ -37,6 +42,6 @@
     </section>
   </main>
 
-  <script src="/static/app.js"></script>
+  <script src="/llmforge/static/app.js"></script>
 </body>
 </html>

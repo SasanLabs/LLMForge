@@ -19,12 +19,14 @@ services:
     command:
       - "-c"
       - |
+        set -eu
+        model="${MODEL_PROFILE:-phi3:mini}"
         echo "Waiting for Ollama server..."
         until ollama list > /dev/null 2>&1; do
           sleep 2
         done
-        echo "Server ready. Pulling model '$MODEL_PROFILE'..."
-        ollama pull $MODEL_PROFILE
+        echo "Server ready. Pulling model '$$model'..."
+        ollama pull "$$model"
         echo "Model pull complete."
 
   llmforge:
