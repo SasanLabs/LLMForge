@@ -1,0 +1,77 @@
+.llmforge-facade-root {
+  border: 1px solid #d7dce2;
+  border-radius: 8px;
+  padding: 16px;
+  background: #ffffff;
+  color: #1f2937;
+}
+
+.llmforge-facade-header {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.llmforge-facade-sub {
+  margin: 0 0 12px;
+  color: #4b5563;
+}
+
+.llmforge-facade-label {
+  display: block;
+  margin: 10px 0 6px;
+  font-weight: 600;
+}
+
+.llmforge-facade-textarea {
+  width: 100%;
+  min-height: 110px;
+  border: 1px solid #c9d2dd;
+  border-radius: 6px;
+  padding: 10px;
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.llmforge-facade-input {
+  width: 100%;
+  border: 1px solid #c9d2dd;
+  border-radius: 6px;
+  padding: 10px;
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.llmforge-facade-actions {
+  margin-top: 10px;
+}
+
+.llmforge-facade-actions button {
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: #1f6feb;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.llmforge-facade-meta {
+  margin: 12px 0 8px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.llmforge-facade-output {
+  margin: 0;
+  padding: 12px;
+  border-radius: 6px;
+  overflow: auto;
+  max-height: 340px;
+  background: #f6f8fa;
+  border: 1px solid #dde3ea;
+}
+
+.llmforge-facade-output.ok {
+  border-color: #2da44e;
+}
+
+.llmforge-facade-output.fail {
+  border-color: #cf222e;
+}
