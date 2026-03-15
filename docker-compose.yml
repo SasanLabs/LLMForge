@@ -1,5 +1,4 @@
 services:
-  # Ollama server
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
@@ -9,27 +8,27 @@ services:
     ports:
       - "11434:11434"
 
-  # Dynamic Ollama init: pulls whatever profile/model you specify
   ollama-init:
     image: ollama/ollama:latest
     depends_on:
       - ollama
     environment:
       - OLLAMA_HOST=ollama:11434
-      - MODEL_PROFILE=${MODEL_PROFILE:-phi3:mini}  # default to mini
+      - MODEL_PROFILE=${MODEL_PROFILE:-phi3:mini}
     entrypoint: /bin/sh
     command:
       - "-c"
       - |
+        set -eu
+        model="${MODEL_PROFILE:-phi3:mini}"
         echo "Waiting for Ollama server..."
         until ollama list > /dev/null 2>&1; do
           sleep 2
         done
-        echo "Server ready! Pulling model for profile '$MODEL_PROFILE'..."
-        ollama pull $MODEL_PROFILE
-        echo "Model $MODEL_PROFILE pulled successfully. Exiting init container."
+        echo "Server ready. Pulling model '$$model'..."
+        ollama pull "$$model"
+        echo "Model pull complete."
 
-  # Your FastAPI app (LLMForge)
   llmforge:
     build: .
     image: llmforge:dev
@@ -37,7 +36,7 @@ services:
       - "8000:8000"
     environment:
       - OLLAMA_URL=http://ollama:11434
-      - OLLAMA_MODEL=${MODEL_PROFILE:-phi3:mini}  # Default matches init
+      - OLLAMA_MODEL=${MODEL_PROFILE:-phi3:mini}
     depends_on:
       - ollama
       - ollama-init
