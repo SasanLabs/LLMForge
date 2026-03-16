@@ -31,8 +31,30 @@
     return level;
   }
 
-  function toPrettyJson(value) {
-    return JSON.stringify(value, null, 2);
+  async function parseResponseBody(res) {
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      return await res.json();
+    }
+
+    const text = await res.text();
+    return { detail: text || "Unexpected empty response from server." };
+  }
+
+  function responseMessage(data, fallback) {
+    if (!data) {
+      return fallback;
+    }
+    if (typeof data.assistant_output === "string" && data.assistant_output.trim()) {
+      return data.assistant_output;
+    }
+    if (typeof data.message === "string" && data.message.trim()) {
+      return data.message;
+    }
+    if (typeof data.detail === "string" && data.detail.trim()) {
+      return data.detail;
+    }
+    return fallback;
   }
 
   function setMeta(level) {
@@ -58,8 +80,14 @@
       body: JSON.stringify({ user_input: payloadInput.value || " " }),
     });
 
-    const data = await res.json();
-    output.textContent = toPrettyJson(res.ok ? data : { error: data });
+    const data = await parseResponseBody(res);
+    if (!res.ok) {
+      output.textContent = responseMessage(data, "Request failed.");
+      output.className = "llmforge-facade-output fail";
+      return;
+    }
+
+    output.textContent = responseMessage(data, "No assistant output returned.");
     output.className = data && data.bypassed ? "llmforge-facade-output fail" : "llmforge-facade-output ok";
   }
 
@@ -79,21 +107,30 @@
       body: JSON.stringify({ candidate_secret: secretInput.value || " " }),
     });
 
-    const data = await res.json();
-    output.textContent = toPrettyJson(res.ok ? data : { error: data });
+    const data = await parseResponseBody(res);
+    if (!res.ok) {
+      output.textContent = responseMessage(data, "Secret verification failed.");
+      output.className = "llmforge-facade-output fail";
+      return;
+    }
+
+    output.textContent = responseMessage(
+      data,
+      data.correct ? "Secret is correct." : "Secret is incorrect."
+    );
     output.className = data && data.correct ? "llmforge-facade-output ok" : "llmforge-facade-output fail";
   }
 
   runBtn.addEventListener("click", function () {
     runPayload().catch(function (err) {
-      output.textContent = toPrettyJson({ error: String(err) });
+      output.textContent = String(err);
       output.className = "llmforge-facade-output fail";
     });
   });
 
   verifyBtn.addEventListener("click", function () {
     verifySecret().catch(function (err) {
-      output.textContent = toPrettyJson({ error: String(err) });
+      output.textContent = String(err);
       output.className = "llmforge-facade-output fail";
     });
   });
