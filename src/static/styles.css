@@ -90,6 +90,16 @@ h1 {
   color: var(--muted);
 }
 
+.sub a {
+  color: var(--ok);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.sub a:hover {
+  filter: brightness(1.1);
+}
+
 .controls {
   display: grid;
   gap: 0.65rem;

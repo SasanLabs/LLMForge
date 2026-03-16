@@ -44,6 +44,16 @@ function prettyJson(value) {
   return JSON.stringify(value, null, 2);
 }
 
+async function parseResponseBody(res) {
+  const contentType = res.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return await res.json();
+  }
+
+  const text = await res.text();
+  return { detail: text || "Unexpected empty response from server." };
+}
+
 async function runLevel() {
   const level = selectedLevel();
   const endpoint = endpointForLevel(level);
@@ -60,7 +70,7 @@ async function runLevel() {
     body: JSON.stringify({ user_input: userInput.value }),
   });
 
-  const data = await res.json();
+  const data = await parseResponseBody(res);
   if (!res.ok) {
     responseBox.textContent = prettyJson({ error: data });
     responseBox.className = "status-fail";
@@ -68,7 +78,7 @@ async function runLevel() {
   }
 
   responseBox.className = data.bypassed ? "status-fail" : "status-ok";
-  responseBox.textContent = prettyJson(data);
+  responseBox.textContent = data.assistant_output || "No assistant output returned.";
 }
 
 async function verifySecret() {
@@ -87,7 +97,7 @@ async function verifySecret() {
     body: JSON.stringify({ candidate_secret: candidateSecret.value }),
   });
 
-  const data = await res.json();
+  const data = await parseResponseBody(res);
   if (!res.ok) {
     responseBox.textContent = prettyJson({ error: data });
     responseBox.className = "status-fail";
@@ -95,7 +105,7 @@ async function verifySecret() {
   }
 
   responseBox.className = data.correct ? "status-ok" : "status-fail";
-  responseBox.textContent = prettyJson(data);
+  responseBox.textContent = data.message || (data.correct ? "Secret is correct." : "Secret is incorrect.");
 }
 
 levelSelect.addEventListener("change", () => {
