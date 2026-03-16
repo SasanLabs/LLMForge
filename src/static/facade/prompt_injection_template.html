@@ -1,6 +1,18 @@
 <div id="llmforge-facade-root" class="llmforge-facade-root" data-api-prefix="__API_PREFIX__">
   <div class="llmforge-facade-header">LLMForge Prompt Injection</div>
   <p class="llmforge-facade-sub">Use payloads to probe the selected level and verify discovered secrets.</p>
+  <p class="llmforge-facade-sub">
+    Prompt injection is an input-manipulation vulnerability where attacker-controlled content causes a model to ignore, reinterpret, or override trusted instructions. In real systems this can lead to system prompt disclosure, sensitive data leakage, policy bypass, unsafe tool invocation, or incorrect trust in attacker-supplied context.
+  </p>
+  <p class="llmforge-facade-sub">
+    This lab walks through common failure modes including weak keyword filtering, prompt-only defenses, delimiter confusion, unsafe structured-data merging, approval-marker trust, and mismatches between what a classifier sees and what the model ultimately executes. The final secure level demonstrates defense-in-depth by removing embedded secrets and tightening validation.
+  </p>
+  <p class="llmforge-facade-sub">
+    For background and defensive guidance, see
+    <a href="https://genai.owasp.org/llmrisk/llm01-prompt-injection/" target="_blank" rel="noopener noreferrer">OWASP LLM01: Prompt Injection</a>
+    and the
+    <a href="https://owasp.org/www-project-top-10-for-large-language-model-applications/" target="_blank" rel="noopener noreferrer">OWASP Top 10 for LLM Applications</a>.
+  </p>
 
   <label class="llmforge-facade-label" for="llmforgePayload">Payload</label>
   <textarea id="llmforgePayload" class="llmforge-facade-textarea" placeholder="Enter payload for this level"></textarea>

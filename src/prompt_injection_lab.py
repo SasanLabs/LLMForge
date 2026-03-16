@@ -383,6 +383,7 @@ async def _call_llm(system_prompt: str, user_input: str, model: str, temperature
         response = await client.post(f"{OLLAMA_URL}/api/chat", json=payload)
         response.raise_for_status()
         data = response.json()
+        print("LLM response:", data)
         content = data.get("message", {}).get("content", "")
         if not isinstance(content, str):
             return str(content)
