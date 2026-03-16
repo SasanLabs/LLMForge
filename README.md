@@ -71,7 +71,7 @@ docker compose up --build -d
 
 Notes:
 - The LLM runtime (`ollama`) and the `llmforge` gateway run in separate containers. Running the app image alone is not supported unless you provide a compatible `ollama` CLI and runtime accessible to the container.
-- Use `docker compose` (above) to start both services together. The compose file also contains profile-based helper services to pull models.
+- Use `docker compose` (above) to start both services together.
 
 
 **Health check**
@@ -90,32 +90,25 @@ curl -X POST http://localhost:8000/generate \
 
 Notes:
 - The gateway currently forwards prompts to the `ollama` CLI via subprocess. The recommended way to run both the runtime and gateway together is via `docker compose` so the CLI/runtime are available.
-- `OLLAMA_MODEL` controls which pulled model the gateway will target. Use the compose profiles (below) to pull models into the `ollama` runtime.
+- `OLLAMA_MODEL` controls which pulled model the gateway will target.
 
-**Docker Compose Profiles (select model sets)**
+**Choose model runtime**
 
-You can selectively pull models using Docker Compose profiles. Examples:
+Set `MODEL_PROFILE` before startup. `ollama-init` will wait for a healthy Ollama, pull that model, and `llmforge` starts only after init completes.
 
-- Start the app + Ollama and pull `llama3`:
+PowerShell:
 
 ```bash
-export MODEL_PROFILE=llama3
-docker compose --profile llama up --build
+$env:MODEL_PROFILE="llama3.1:8b"
+docker compose up --build
 ```
 
-- Start the app + Ollama and pull `mistral`:
+Bash:
 
 ```bash
 export MODEL_PROFILE=mistral:7b-instruct-q4_0
 docker compose up --build
 
 ```
-- Start the app + Ollama and pull `mini`:
 
-
-```bash
-export MODEL_PROFILE=phi3:mini
-docker compose up --build
-```
-
-Profiles create small helper services (`ollama-init-<name>`) that run `ollama pull` after the runtime starts, keeping the compose file clean and flexible.
+If `MODEL_PROFILE` is not set, default is `phi3:mini`.
