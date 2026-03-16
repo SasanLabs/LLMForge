@@ -1,4 +1,5 @@
-🛡️ LLMForge
+# 🛡️ LLMForge
+![](https://img.shields.io/github/v/release/SasanLabs/LLMForge?style=flat) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) [![Docker Pulls](https://badgen.net/docker/pulls/sasanlabs/llmforge?icon=docker&label=pulls)](https://hub.docker.com/r/sasanlabs/llmforge/) 
 
 AI Security Gateway for Dynamic Vulnerability Labs
 LLMForge is a security-first LLM control plane built to power AI-driven vulnerability simulations.
