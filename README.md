@@ -5,8 +5,6 @@ AI Security Gateway for Dynamic Vulnerability Labs
 LLMForge is a security-first LLM control plane built to power AI-driven vulnerability simulations.
 It serves as the AI execution layer for SasanLabs and integrates directly with the VulnerableApp ecosystem, enabling dynamic exploit labs driven by language models.
 
-It also includes a simple local retrieval setup backed by Ollama embeddings and a FAISS index so you can store and query small text collections without adding another external service.
-
 🎯 Purpose
 
 LLMForge enables two powerful security modes:
@@ -116,47 +114,3 @@ docker compose up --build
 ```
 
 If `MODEL_PROFILE` is not set, default is `phi3:mini`.
-
-**Simple vector DB setup**
-
-The app now ships with:
-
-- Ollama running in Docker
-- automatic model pull for both generation and embeddings
-- a local FAISS index persisted under `data/`
-- minimal APIs for indexing and semantic search
-
-Defaults:
-
-- `OLLAMA_MODEL=phi3:mini`
-- `OLLAMA_EMBED_MODEL=nomic-embed-text`
-
-PowerShell:
-
-```bash
-$env:MODEL_PROFILE="llama3.1:8b"
-$env:OLLAMA_EMBED_MODEL="nomic-embed-text"
-docker compose up --build
-```
-
-Index documents:
-
-```bash
-curl -X POST http://localhost:8000/api/v1/vector/documents \
-	-H "Content-Type: application/json" \
-	-d '{"documents":[{"id":"doc-1","text":"FAISS is a vector index library."},{"id":"doc-2","text":"Ollama can generate embeddings with nomic-embed-text."}]}'
-```
-
-Search documents:
-
-```bash
-curl -X POST http://localhost:8000/api/v1/vector/search \
-	-H "Content-Type: application/json" \
-	-d '{"query":"Which model creates embeddings?","top_k":2}'
-```
-
-Inspect index status:
-
-```bash
-curl http://localhost:8000/api/v1/vector/status
-```
