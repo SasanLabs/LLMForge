@@ -6,6 +6,11 @@
   color: #1f2937;
 }
 
+.llmforge-facade-root,
+.llmforge-facade-root * {
+  box-sizing: border-box;
+}
+
 .llmforge-facade-header {
   font-weight: 700;
   margin-bottom: 6px;
@@ -66,6 +71,10 @@
   max-height: 340px;
   background: #f6f8fa;
   border: 1px solid #dde3ea;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .llmforge-facade-output.ok {

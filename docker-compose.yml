@@ -22,18 +22,22 @@ services:
     environment:
       - OLLAMA_HOST=http://ollama:11434
       - MODEL_PROFILE=${MODEL_PROFILE:-phi3:mini}
+      - OLLAMA_EMBED_MODEL=${OLLAMA_EMBED_MODEL:-nomic-embed-text}
     entrypoint: /bin/sh
     command:
       - "-c"
       - |
         set -eu
         model="${MODEL_PROFILE:-phi3:mini}"
+        embed_model="${OLLAMA_EMBED_MODEL:-nomic-embed-text}"
         echo "Waiting for Ollama server..."
         until ollama list > /dev/null 2>&1; do
           sleep 2
         done
         echo "Server ready. Pulling model '$$model'..."
         ollama pull "$$model"
+        echo "Pulling embedding model '$$embed_model'..."
+        ollama pull "$$embed_model"
         echo "Model pull complete."
 
   llmforge:
@@ -44,6 +48,7 @@ services:
     environment:
       - OLLAMA_URL=http://ollama:11434
       - OLLAMA_MODEL=${MODEL_PROFILE:-phi3:mini}
+      - OLLAMA_EMBED_MODEL=${OLLAMA_EMBED_MODEL:-nomic-embed-text}
     depends_on:
       ollama:
         condition: service_healthy

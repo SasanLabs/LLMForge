@@ -1,11 +1,10 @@
 from dataclasses import dataclass
 import hmac
 import json
-import os
 import re
 from typing import Callable, Dict
 
-import httpx
+from .ollama_client import OLLAMA_MODEL, chat_completion
 
 
 @dataclass(frozen=True)
@@ -18,10 +17,6 @@ class PromptInjectionLevel:
     default_temperature: float
     is_secure: bool
 
-
-OLLAMA_URL = os.getenv("OLLAMA_URL", "http://127.0.0.1:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "phi3:mini")
-LLM_TIMEOUT_SECONDS = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "90"))
 def _contains_any(value: str, tokens: list[str]) -> bool:
     lower = value.lower()
     return any(t.lower() in lower for t in tokens)
@@ -253,6 +248,131 @@ def _level_3_input(raw_input: str) -> GuardResult:
     return result
 
 
+def _passthrough_input(raw_input: str) -> GuardResult:
+    return GuardResult(allowed=True, value=raw_input.strip())
+
+
+def _level_4_app_input(raw_input: str) -> GuardResult:
+    text = raw_input.strip()
+    rules = [
+        GuardRule(pattern="ignore previous instructions"),
+        GuardRule(pattern="reveal the secret"),
+        GuardRule(pattern="system prompt"),
+    ]
+    result = _apply_guard(
+        text,
+        rules=rules,
+        block_message="Request blocked by level 4 application filter.",
+        transform=_normalize_whitespace,
+    )
+    if result.allowed:
+        return GuardResult(allowed=True, value=text)
+    return result
+
+
+def _level_5_app_input(raw_input: str) -> GuardResult:
+    text = raw_input.strip()
+    rules = [
+        GuardRule(pattern="ignore previous instructions"),
+        GuardRule(pattern="reveal secret"),
+        GuardRule(pattern="system prompt"),
+    ]
+    result = _apply_guard(
+        text,
+        rules=rules,
+        block_message="Request blocked by level 5 application filter.",
+        transform=lambda value: _normalize_whitespace(value.lower()),
+    )
+    if result.allowed:
+        return GuardResult(allowed=True, value=text)
+    return result
+
+
+def _level_6_app_input(raw_input: str) -> GuardResult:
+    text = raw_input.strip()
+    classifier_view = re.sub(r"\[\[.*?\]\]", "", text, flags=re.DOTALL)
+    rules = [
+        GuardRule(pattern="reveal secret", normalize=lambda s: s.lower()),
+        GuardRule(pattern="system prompt", normalize=lambda s: s.lower()),
+        GuardRule(pattern="ignore previous", normalize=lambda s: s.lower()),
+    ]
+    result = _apply_guard(
+        classifier_view,
+        rules=rules,
+        block_message="Request blocked by level 6 application filter.",
+        transform=_identity,
+    )
+    if result.allowed:
+        return GuardResult(allowed=True, value=text)
+    return result
+
+
+def _level_7_app_input(raw_input: str) -> GuardResult:
+    text = raw_input.strip()
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        parsed = None
+
+    candidate = text
+    if isinstance(parsed, dict):
+        candidate = str(parsed.get("query", ""))
+
+    rules = [
+        GuardRule(pattern="reveal secret"),
+        GuardRule(pattern="system prompt"),
+        GuardRule(pattern="secret key"),
+    ]
+    result = _apply_guard(
+        candidate,
+        rules=rules,
+        block_message="Request blocked by level 7 application filter.",
+        transform=lambda value: _normalize_whitespace(value.lower()),
+    )
+    if result.allowed:
+        return GuardResult(allowed=True, value=text)
+    return result
+
+
+def _level_8_app_input(raw_input: str) -> GuardResult:
+    text = raw_input.strip()
+    visible_prefix = re.split(r"approved:", text, maxsplit=1, flags=re.IGNORECASE)[0]
+    rules = [
+        GuardRule(pattern="reveal secret"),
+        GuardRule(pattern="system prompt"),
+        GuardRule(pattern="secret key"),
+    ]
+    result = _apply_guard(
+        visible_prefix,
+        rules=rules,
+        block_message="Request blocked by level 8 application filter.",
+        transform=lambda value: _normalize_whitespace(value.lower()),
+    )
+    if result.allowed:
+        return GuardResult(allowed=True, value=text)
+    return result
+
+
+def _level_9_app_input(raw_input: str) -> GuardResult:
+    text = raw_input.strip()
+    classifier_view = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+    rules = [
+        GuardRule(pattern="ignore", normalize=lambda s: s.lower()),
+        GuardRule(pattern="reveal", normalize=lambda s: s.lower()),
+        GuardRule(pattern="secret", normalize=lambda s: s.lower()),
+        GuardRule(pattern="system prompt", normalize=lambda s: s.lower()),
+    ]
+    result = _apply_guard(
+        classifier_view,
+        rules=rules,
+        block_message="Request blocked by level 9 application filter.",
+        transform=_identity,
+    )
+    if result.allowed:
+        return GuardResult(allowed=True, value=text)
+    return result
+
+
 def _level_4_input(raw_input: str) -> GuardResult:
     return GuardResult(allowed=True, value=raw_input.strip(), llm_temperature=LEVELS[4].default_temperature)
 
@@ -309,24 +429,7 @@ def _level_8_input(raw_input: str) -> GuardResult:
 
 
 def _level_9_input(raw_input: str) -> GuardResult:
-    text = raw_input.strip()
-    classifier_view = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
-    rules = [
-        GuardRule(pattern="ignore", normalize=lambda s: s.lower()),
-        GuardRule(pattern="reveal", normalize=lambda s: s.lower()),
-        GuardRule(pattern="secret", normalize=lambda s: s.lower()),
-        GuardRule(pattern="system prompt", normalize=lambda s: s.lower()),
-    ]
-    classifier_result = _apply_guard(
-        classifier_view,
-        rules=rules,
-        block_message="Request blocked by classifier.",
-        transform=_identity,
-    )
-    if not classifier_result.allowed:
-        return classifier_result
-
-    return GuardResult(allowed=True, value=text, llm_temperature=LEVELS[9].default_temperature)
+    return GuardResult(allowed=True, value=raw_input.strip(), llm_temperature=LEVELS[9].default_temperature)
 
 
 def _level_10_input(raw_input: str) -> GuardResult:
@@ -368,26 +471,22 @@ LEVEL_INPUT_HANDLERS: Dict[int, Callable[[str], GuardResult]] = {
 }
 
 
-async def _call_llm(system_prompt: str, user_input: str, model: str, temperature: float) -> str:
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_input},
-        ],
-        "stream": False,
-        "options": {"temperature": temperature},
-    }
+APP_INPUT_HANDLERS: Dict[int, Callable[[str], GuardResult]] = {
+    1: _passthrough_input,
+    2: _passthrough_input,
+    3: _passthrough_input,
+    4: _level_4_app_input,
+    5: _level_5_app_input,
+    6: _level_6_app_input,
+    7: _level_7_app_input,
+    8: _level_8_app_input,
+    9: _level_9_app_input,
+    10: _passthrough_input,
+}
 
-    async with httpx.AsyncClient(timeout=LLM_TIMEOUT_SECONDS) as client:
-        response = await client.post(f"{OLLAMA_URL}/api/chat", json=payload)
-        response.raise_for_status()
-        data = response.json()
-        print("LLM response:", data)
-        content = data.get("message", {}).get("content", "")
-        if not isinstance(content, str):
-            return str(content)
-        return content.strip()
+
+async def _call_llm(system_prompt: str, user_input: str, model: str, temperature: float) -> str:
+    return await chat_completion(system_prompt, user_input, model=model, temperature=temperature)
 
 
 def _detect_leak(output: str, challenge: PromptInjectionLevel) -> bool:
@@ -430,9 +529,23 @@ async def evaluate_level(
         raise ValueError("level must be between 1 and 10")
 
     challenge = LEVELS[level]
+    app_handler = APP_INPUT_HANDLERS[level]
     handler = LEVEL_INPUT_HANDLERS[level]
     selected_model = model or OLLAMA_MODEL
-    input_result = handler(user_input)
+    app_result = app_handler(user_input)
+    if not app_result.allowed:
+        return {
+            "level": challenge.level,
+            "name": challenge.name,
+            "objective": challenge.objective,
+            "model": selected_model,
+            "temperature": challenge.default_temperature,
+            "input_accepted": False,
+            "bypassed": False,
+            "assistant_output": app_result.value,
+        }
+
+    input_result = handler(app_result.value)
     selected_temperature = input_result.llm_temperature
     if selected_temperature is None:
         selected_temperature = challenge.default_temperature

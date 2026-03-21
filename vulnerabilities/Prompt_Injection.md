@@ -24,6 +24,7 @@ If prompt injection is not handled correctly, attackers can:
 The lab is intentionally vulnerable and uses a real LLM backend (Ollama) for each request. It demonstrates common anti-patterns used in LLM applications:
 
 - Weak deny-lists
+- Shallow application-side keyword filters that still miss attacker-controlled channels
 - Improper normalization
 - Context delimiter abuse
 - Untrusted metadata merge
