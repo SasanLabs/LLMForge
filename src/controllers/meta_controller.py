@@ -1,6 +1,6 @@
-import os
-
 from fastapi import APIRouter
+
+from ..ollama_client import OLLAMA_EMBED_MODEL, OLLAMA_MODEL, OLLAMA_URL
 
 router = APIRouter(prefix="/api/v1", tags=["meta"])
 
@@ -20,6 +20,7 @@ async def info():
         "levels_api": f"{base_path}/api/v1/vulnerabilities/prompt-injection",
         "facade_vulnerability_definitions": f"{base_path}/VulnerabilityDefinitions",
         "facade_template": f"{base_path}/facade/llmforge/prompt-injection/template",
-        "ollama_url": os.getenv("OLLAMA_URL", "http://127.0.0.1:11434"),
-        "default_model": os.getenv("OLLAMA_MODEL", "phi3:mini"),
+        "ollama_url": OLLAMA_URL,
+        "default_model": OLLAMA_MODEL,
+        "embedding_model": OLLAMA_EMBED_MODEL,
     }

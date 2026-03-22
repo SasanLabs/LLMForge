@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 # Minimal system deps for building wheels if needed
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc libc-dev \
+    && apt-get install -y --no-install-recommends gcc libc-dev libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

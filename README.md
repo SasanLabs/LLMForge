@@ -92,6 +92,7 @@ curl -X POST http://localhost:8000/generate \
 Notes:
 - The gateway currently forwards prompts to the `ollama` CLI via subprocess. The recommended way to run both the runtime and gateway together is via `docker compose` so the CLI/runtime are available.
 - `OLLAMA_MODEL` controls which pulled model the gateway will target.
+- `OLLAMA_EMBED_MODEL` controls which embedding model is pulled for vector search. The default is `nomic-embed-text`.
 
 **Choose model runtime**
 
