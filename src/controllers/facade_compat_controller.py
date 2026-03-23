@@ -90,15 +90,18 @@ async def vulnerability_definitions() -> list[dict]:
             "name": "PromptInjection",
             "id": "PromptInjection",
             "description": (
-                "LLMForge Prompt Injection\n"
-                "Use payloads to probe the selected level and verify discovered secrets.\n\n"
-                "Prompt injection is an input-manipulation vulnerability where attacker-controlled content causes a model to ignore, reinterpret, or override trusted instructions. "
-                "In real systems this can lead to system prompt disclosure, sensitive data leakage, policy bypass, unsafe tool invocation, or incorrect trust in attacker-supplied context.\n\n"
-                "This lab walks through common failure modes including weak keyword filtering, prompt-only defenses, delimiter confusion, unsafe structured-data merging, approval-marker trust, and mismatches between what a classifier sees and what the model ultimately executes. "
-                "The final secure level demonstrates defense-in-depth by removing embedded secrets and tightening validation.\n\n"
-                "For background and defensive guidance:\n"
-                "OWASP LLM01: Prompt Injection: https://genai.owasp.org/llmrisk/llm01-prompt-injection/\n"
-                "OWASP Top 10 for LLM Applications: https://owasp.org/www-project-top-10-for-large-language-model-applications/"
+                "<h3>LLMForge Prompt Injection</h3>"
+                "<p>Use payloads to probe the selected level and verify discovered secrets.</p>"
+                "<p>Prompt injection is an input-manipulation vulnerability where attacker-controlled content causes a model to ignore, reinterpret, or override trusted instructions. "
+                "In real systems this can lead to system prompt disclosure, sensitive data leakage, policy bypass, unsafe tool invocation, or incorrect trust in attacker-supplied context.</p>"
+                "<p>This lab covers weak keyword filtering, prompt-only defenses, delimiter confusion, unsafe structured-data merging, approval-marker trust, and mismatches between what a classifier sees and what the model ultimately executes.</p>"
+                "<p><strong>Relevant resources:</strong></p>"
+                "<ul>"
+                "<li><a href='https://genai.owasp.org/llmrisk/llm01-prompt-injection/' target='_blank' rel='noopener noreferrer'>OWASP LLM01: Prompt Injection</a></li>"
+                "<li><a href='https://owasp.org/www-project-top-10-for-large-language-model-applications/' target='_blank' rel='noopener noreferrer'>OWASP Top 10 for LLM Applications</a></li>"
+                "<li><a href='https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html' target='_blank' rel='noopener noreferrer'>OWASP LLM Prompt Injection Prevention Cheat Sheet</a></li>"
+                "<li><a href='https://atlas.mitre.org/' target='_blank' rel='noopener noreferrer'>MITRE ATLAS</a></li>"
+                "</ul>"
             ),
             "vulnerabilityTypes": [
                 {"identifierType": "OWASP", "value": "LLM01:2025"},
@@ -110,13 +113,19 @@ async def vulnerability_definitions() -> list[dict]:
             "name": "IndirectPromptInjection",
             "id": "IndirectPromptInjection",
             "description": (
-                "LLMForge Indirect Prompt Injection\n"
-                "Use payloads with extra source material (Path or URL) to probe multi-source prompt injection behavior.\n\n"
-                "Indirect prompt injection occurs when external or retrieved content is treated as trusted instructions. "
-                "This can lead to hidden-instruction execution and cross-boundary data exfiltration when internal and external sources are combined.\n\n"
-                "For background and defensive guidance:\n"
-                "OWASP LLM01: Prompt Injection: https://genai.owasp.org/llmrisk/llm01-prompt-injection/\n"
-                "OWASP Top 10 for LLM Applications: https://owasp.org/www-project-top-10-for-large-language-model-applications/"
+                "<h3>LLMForge Indirect Prompt Injection</h3>"
+                "<p>Use payloads with extra source material (Path or URL) to probe multi-source prompt injection behavior.</p>"
+                "<p>Indirect prompt injection occurs when retrieved content (web pages, docs, comments, metadata) is treated as trusted instructions. "
+                "This can lead to hidden-instruction execution and cross-boundary data exfiltration when internal and external sources are combined.</p>"
+                "<p><strong>Important:</strong> what the user sees is not always what the model processes. Hidden HTML comments or metadata can contain attacker instructions, so users can be tricked by content that looks harmless.</p>"
+                "<p><strong>Relevant resources:</strong></p>"
+                "<ul>"
+                "<li><a href='https://genai.owasp.org/llmrisk/llm01-prompt-injection/' target='_blank' rel='noopener noreferrer'>OWASP LLM01: Prompt Injection</a></li>"
+                "<li><a href='https://owasp.org/www-project-top-10-for-large-language-model-applications/' target='_blank' rel='noopener noreferrer'>OWASP Top 10 for LLM Applications</a></li>"
+                "<li><a href='https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html' target='_blank' rel='noopener noreferrer'>OWASP LLM Prompt Injection Prevention Cheat Sheet</a></li>"
+                "<li><a href='https://www.nist.gov/itl/ai-risk-management-framework' target='_blank' rel='noopener noreferrer'>NIST AI Risk Management Framework</a></li>"
+                "<li><a href='https://atlas.mitre.org/' target='_blank' rel='noopener noreferrer'>MITRE ATLAS</a></li>"
+                "</ul>"
             ),
             "vulnerabilityTypes": [
                 {"identifierType": "OWASP", "value": "LLM01:2025"},
