@@ -111,6 +111,7 @@ label {
 }
 
 select,
+input,
 textarea,
 button {
   border-radius: 10px;
@@ -120,6 +121,7 @@ button {
 }
 
 select,
+input,
 textarea {
   width: 100%;
   background: rgba(27, 38, 59, 0.8);
