@@ -52,8 +52,11 @@ function updateSourceInputs() {
   const indirect = isIndirectLab();
   sourceType.disabled = !indirect;
   sourceValue.disabled = !indirect;
+  if (!indirect) {
+    sourceType.value = "local";
+  }
   sourceHint.textContent = indirect
-    ? "Indirect levels 1-3 require extra source material. Use local path under docs/ or data/, or external URL."
+    ? "Indirect prompt injection accepts only Path or External URL as source input."
     : "Extra source is only used for the indirect lab.";
 }
 

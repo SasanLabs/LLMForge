@@ -42,13 +42,12 @@
 
       <label for="sourceType">Extra Document Source (Indirect Lab)</label>
       <select id="sourceType" name="sourceType">
-        <option value="none">None</option>
-        <option value="local">Local Document (docs/ or data/)</option>
+        <option value="local">Path</option>
         <option value="url">External URL</option>
       </select>
 
       <label for="sourceValue">Source Value (Path or URL)</label>
-      <input id="sourceValue" name="sourceValue" type="text" placeholder="docs/PromptInjectionNotes.md or https://example.com/page" />
+      <input id="sourceValue" name="sourceValue" type="text" placeholder="C:/Users/name/file.txt or https://example.com/page" />
       <p id="sourceHint" class="api-path">Indirect levels 1-3 require extra source material.</p>
 
       <button id="submitBtn" type="button">Submit Payload</button>

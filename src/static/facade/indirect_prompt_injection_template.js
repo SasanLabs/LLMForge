@@ -5,6 +5,8 @@
   }
 
   const payloadInput = document.getElementById("llmforgePayload");
+  const sourceType = document.getElementById("llmforgeSourceType");
+  const sourceValue = document.getElementById("llmforgeSourceValue");
   const secretInput = document.getElementById("llmforgeSecret");
   const runBtn = document.getElementById("llmforgeRunBtn");
   const verifyBtn = document.getElementById("llmforgeVerifyBtn");
@@ -25,7 +27,7 @@
     }
 
     const level = Number(match[1]);
-    if (!Number.isInteger(level) || level < 1 || level > 10) {
+    if (!Number.isInteger(level) || level < 1 || level > 4) {
       return 1;
     }
     return level;
@@ -63,7 +65,7 @@
       level +
       " | " +
       apiPrefix +
-      "/api/v1/vulnerabilities/prompt-injection/level" +
+      "/api/v1/vulnerabilities/indirect-prompt-injection/level" +
       level;
   }
 
@@ -74,13 +76,16 @@
 
     const endpoint =
       apiPrefix +
-      "/api/v1/vulnerabilities/prompt-injection/level" +
+      "/api/v1/vulnerabilities/indirect-prompt-injection/level" +
       level;
-
     const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_input: payloadInput.value || " " }),
+      body: JSON.stringify({
+        user_input: payloadInput.value || " ",
+        source_type: sourceType.value || "local",
+        source_value: sourceValue.value || "",
+      }),
     });
 
     const data = await parseResponseBody(res);
@@ -101,7 +106,7 @@
 
     const endpoint =
       apiPrefix +
-      "/api/v1/vulnerabilities/prompt-injection/level" +
+      "/api/v1/vulnerabilities/indirect-prompt-injection/level" +
       level +
       "/verify-secret";
     const res = await fetch(endpoint, {

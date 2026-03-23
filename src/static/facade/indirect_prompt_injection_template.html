@@ -1,0 +1,30 @@
+<div id="llmforge-facade-root" class="llmforge-facade-root" data-api-prefix="__API_PREFIX__">
+  <div class="llmforge-facade-header">LLMForge Indirect Prompt Injection</div>
+  <p class="llmforge-facade-sub">Task: Use payload + source (Path or URL) to probe indirect prompt injection behavior.</p>
+
+  <label class="llmforge-facade-label" for="llmforgePayload">Payload</label>
+  <textarea id="llmforgePayload" class="llmforge-facade-textarea" placeholder="Enter payload for this level"></textarea>
+
+  <label class="llmforge-facade-label" for="llmforgeSourceType">Extra Source Type</label>
+  <select id="llmforgeSourceType" class="llmforge-facade-input">
+    <option value="local">Path</option>
+    <option value="url">External URL</option>
+  </select>
+
+  <label class="llmforge-facade-label" for="llmforgeSourceValue">Source Value (Path or URL)</label>
+  <input id="llmforgeSourceValue" class="llmforge-facade-input" type="text" placeholder="C:/Users/name/file.txt or https://example.com/page" />
+
+  <div class="llmforge-facade-actions">
+    <button id="llmforgeRunBtn" type="button">Submit Payload</button>
+  </div>
+
+  <label class="llmforge-facade-label" for="llmforgeSecret">Enter Secret</label>
+  <input id="llmforgeSecret" class="llmforge-facade-input" type="text" placeholder="Enter secret" />
+
+  <div class="llmforge-facade-actions">
+    <button id="llmforgeVerifyBtn" type="button">Check Secret</button>
+  </div>
+
+  <p id="llmforgeMeta" class="llmforge-facade-meta"></p>
+  <pre id="llmforgeOutput" class="llmforge-facade-output"></pre>
+</div>

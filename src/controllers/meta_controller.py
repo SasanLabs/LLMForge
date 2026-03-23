@@ -21,6 +21,7 @@ async def info():
         "indirect_levels_api": f"{base_path}/api/v1/vulnerabilities/indirect-prompt-injection",
         "facade_vulnerability_definitions": f"{base_path}/VulnerabilityDefinitions",
         "facade_template": f"{base_path}/facade/llmforge/prompt-injection/template",
+        "indirect_facade_template": f"{base_path}/facade/llmforge/indirect-prompt-injection/template",
         "ollama_url": OLLAMA_URL,
         "default_model": OLLAMA_MODEL,
         "embedding_model": OLLAMA_EMBED_MODEL,
