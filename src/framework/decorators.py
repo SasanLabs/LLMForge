@@ -84,7 +84,8 @@ def vulnerable_llm_endpoint(
     level: str,
     variant: Variant = Variant.UNSECURE,
     html_template: str = "",
-    methods: List[str] = None,
+    methods: str = "GET",
+    secret_token: Optional[str] = None,
     html_template_key: Optional[str] = None,
     locale: str = "us"
 ) -> Callable:
@@ -95,10 +96,11 @@ def vulnerable_llm_endpoint(
     and HTTP methods supported by this endpoint.
     
     Args:
-        level: Level identifier (e.g., "level1", "level2")
+        level: Level identifier (e.g., "LEVEL_1", "LEVEL_2")
         variant: UNSECURE or SECURE implementation variant
         html_template: Name of HTML template for UI rendering
-        methods: List of HTTP methods supported (default: ["GET"])
+        methods: HTTP method supported as string (e.g., "GET" or "POST")
+        secret_token: Optional secret token for this level (for verification)
         html_template_key: Optional properties file key to load template name from
         locale: Locale code for properties file (default: "us")
         
@@ -107,26 +109,21 @@ def vulnerable_llm_endpoint(
         
     Example:
         @vulnerable_llm_endpoint(
-            level="level1",
+            level="LEVEL_1",
             variant=Variant.UNSECURE,
             html_template="level1",
-            methods=["GET", "POST"]
-        )
-        async def level1(self, request: Request):
-            ...
-            
-        # Or with properties file:
-        @vulnerable_llm_endpoint(
-            level="level1",
-            variant=Variant.UNSECURE,
-            html_template="level.unsecure_basic",
-            html_template_key="level.unsecure_basic"
+            methods="POST",
+            secret_token="secret_key_123"
         )
         async def level1(self, request: Request):
             ...
     """
-    if methods is None:
-        methods = ["GET"]
+    if not isinstance(methods, str):
+        raise ValueError("methods must be a single HTTP method as string (e.g., 'GET' or 'POST')")
+    
+    methods = methods.upper()
+    if methods not in ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]:
+        raise ValueError(f"Invalid HTTP method: {methods}")
     
     def decorator(func: Callable) -> Callable:
         if not hasattr(func, "_vulnerable_llm_levels"):
@@ -148,7 +145,8 @@ def vulnerable_llm_endpoint(
             "level": level,
             "variant": variant,
             "html_template": template,
-            "methods": methods,
+            "methods": [methods],  # Store as list for compatibility with registry
+            "secret_token": secret_token,
             "attack_vectors": []
         })
         
@@ -158,10 +156,8 @@ def vulnerable_llm_endpoint(
 
 def attack_vector(
     vulnerability_exposed: List[str],
-    payload: str = "NOT_APPLICABLE",
-    description: str = "",
-    description_key: Optional[str] = None,
-    payload_key: Optional[str] = None,
+    description_key: str,
+    payload_key: str = "payload.na",
     locale: str = "us"
 ) -> Callable:
     """
@@ -170,12 +166,13 @@ def attack_vector(
     This decorator augments an endpoint with information about specific
     attack vectors, payloads, and vulnerability types that can be tested.
     
+    Payload and description are loaded from properties files to support
+    multiple formats (plain text, HTML, multi-line, etc.).
+    
     Args:
         vulnerability_exposed: List of vulnerability types exposed
-        payload: Example payload for the attack (optional)
-        description: Description of the attack vector
-        description_key: Optional properties file key to load description from
-        payload_key: Optional properties file key to load payload from
+        description_key: Properties file key to load description from
+        payload_key: Properties file key to load payload from (default: "payload.na")
         locale: Locale code for properties file (default: "us")
         
     Returns:
@@ -184,19 +181,8 @@ def attack_vector(
     Example:
         @attack_vector(
             vulnerability_exposed=["Prompt Injection"],
-            payload="ignore previous instructions",
-            description="Basic prompt injection attack"
-        )
-        async def level1(self, request: Request):
-            ...
-            
-        # Or with properties file:
-        @attack_vector(
-            vulnerability_exposed=["Prompt Injection"],
-            payload="attack.direct_injection.payload",
-            payload_key="attack.direct_injection.payload",
-            description="attack.direct_injection",
-            description_key="attack.direct_injection"
+            description_key="attack.direct_injection",
+            payload_key="attack.direct_injection.payload"
         )
         async def level1(self, request: Request):
             ...
@@ -205,36 +191,25 @@ def attack_vector(
         if not hasattr(func, "_vulnerable_llm_levels"):
             func._vulnerable_llm_levels = []
         
-        # Load from properties if keys are provided
-        desc = description
-        pay = payload
+        # Load from properties
+        try:
+            desc = PropertiesLoader.get_property(description_key, locale)
+        except FileNotFoundError:
+            desc = f"[Key not found: {description_key}]"
         
-        if description_key:
-            try:
-                desc = PropertiesLoader.get_property(
-                    description_key,
-                    locale
-                )
-            except FileNotFoundError:
-                # Fall back to provided description
-                desc = description
-        
-        if payload_key:
-            try:
-                pay = PropertiesLoader.get_property(
-                    payload_key,
-                    locale
-                )
-            except FileNotFoundError:
-                # Fall back to provided payload
-                pay = payload
+        try:
+            pay = PropertiesLoader.get_property(payload_key, locale)
+        except FileNotFoundError:
+            pay = "[Key not found: payload]"
         
         # Add attack vector to all levels associated with this function
         for level in func._vulnerable_llm_levels:
             level["attack_vectors"].append({
                 "vulnerability_exposed": vulnerability_exposed,
                 "payload": pay,
-                "description": desc
+                "description": desc,
+                "description_key": description_key,
+                "payload_key": payload_key
             })
         
         return func

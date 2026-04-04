@@ -1,70 +1,174 @@
-import httpx
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+"""
+Indirect Prompt Injection Controller - Framework Version
 
-from ..indirect_prompt_injection_lab import (
-    INDIRECT_LEVELS,
+Uses the decorator-driven framework to define indirect prompt injection vulnerability levels.
+"""
+
+from fastapi import Request
+import httpx
+
+from ..framework import (
+    vulnerable_llm_controller,
+    vulnerable_llm_endpoint,
+    attack_vector,
+    Variant,
+)
+from ..service.vulnerabilities import (
     evaluate_indirect_level,
-    verify_indirect_level_secret,
 )
 
-router = APIRouter(prefix="/api/v1/vulnerabilities", tags=["indirect-prompt-injection"])
 
+@vulnerable_llm_controller(
+    name="indirect_prompt_injection",
+    description_label="Indirect Prompt Injection Attacks"
+)
+class IndirectPromptInjectionController:
+    """Indirect Prompt Injection vulnerability levels."""
 
-class IndirectPromptInjectionRequest(BaseModel):
-    user_input: str = Field(..., min_length=1, max_length=5000)
-    source_type: str | None = Field(default="none", max_length=20)
-    source_value: str | None = Field(default=None, max_length=5000)
-    model: str | None = Field(default=None, max_length=120)
+    @vulnerable_llm_endpoint(
+        level="level_1",
+        variant=Variant.UNSECURE,
+        html_template="indirect_prompt_injection_level1",
+        methods="POST",
+        secret_token="ind_l1_A9rQ2mX7tP4kV8"
+    )
+    @attack_vector(
+        vulnerability_exposed=["Indirect Prompt Injection"],
+        description_key="attack.direct_injection",
+        payload_key="payload.direct_injection"
+    )
+    async def level1(self, request: Request) -> dict:
+        """Level 1: Basic Webpage Injection"""
+        data = await request.json()
+        user_input = data.get("user_input", "")
+        source_type = data.get("source_type")
+        source_value = data.get("source_value")
+        temperature = data.get("temperature")
+        model = data.get("model")
+        
+        try:
+            return await evaluate_indirect_level(
+                1,
+                user_input,
+                source_type=source_type,
+                source_value=source_value,
+                secret_token="ind_l1_A9rQ2mX7tP4kV8",
+                temperature=temperature,
+                is_secure=False,
+                model=model
+            )
+        except ValueError as exc:
+            return {"error": str(exc)}
+        except httpx.RequestError as exc:
+            return {"error": "Model service unavailable"}
 
+    @vulnerable_llm_endpoint(
+        level="level_2",
+        variant=Variant.UNSECURE,
+        html_template="indirect_prompt_injection_level2",
+        methods="POST",
+        secret_token="ind_l2_N6wC3zR1yH8dF5"
+    )
+    @attack_vector(
+        vulnerability_exposed=["Indirect Prompt Injection", "Hidden Content Exploitation"],
+        description_key="attack.hidden_content",
+        payload_key="payload.hidden_content"
+    )
+    async def level2(self, request: Request) -> dict:
+        """Level 2: Hidden Injection (Stealth Attack)"""
+        data = await request.json()
+        user_input = data.get("user_input", "")
+        source_type = data.get("source_type")
+        source_value = data.get("source_value")
+        temperature = data.get("temperature")
+        model = data.get("model")
+        
+        try:
+            return await evaluate_indirect_level(
+                2,
+                user_input,
+                source_type=source_type,
+                source_value=source_value,
+                secret_token="ind_l2_N6wC3zR1yH8dF5",
+                temperature=temperature,
+                is_secure=False,
+                model=model
+            )
+        except ValueError as exc:
+            return {"error": str(exc)}
+        except httpx.RequestError as exc:
+            return {"error": "Model service unavailable"}
 
-class IndirectSecretVerificationRequest(BaseModel):
-    candidate_secret: str = Field(..., min_length=1, max_length=500)
+    @vulnerable_llm_endpoint(
+        level="level_3",
+        variant=Variant.UNSECURE,
+        html_template="indirect_prompt_injection_level3",
+        methods="POST",
+        secret_token="ind_l3_T4vM9qK2pS7xB1"
+    )
+    @attack_vector(
+        vulnerability_exposed=["Indirect Prompt Injection", "Context Confusion"],
+        description_key="attack.context_confusion",
+        payload_key="payload.context_confusion"
+    )
+    async def level3(self, request: Request) -> dict:
+        """Level 3: Multi-Source Data Exfiltration"""
+        data = await request.json()
+        user_input = data.get("user_input", "")
+        source_type = data.get("source_type")
+        source_value = data.get("source_value")
+        temperature = data.get("temperature")
+        model = data.get("model")
+        
+        try:
+            return await evaluate_indirect_level(
+                3,
+                user_input,
+                source_type=source_type,
+                source_value=source_value,
+                secret_token="ind_l3_T4vM9qK2pS7xB1",
+                temperature=temperature,
+                is_secure=False,
+                model=model
+            )
+        except ValueError as exc:
+            return {"error": str(exc)}
+        except httpx.RequestError as exc:
+            return {"error": "Model service unavailable"}
 
-
-async def _run_level(level: int, payload: IndirectPromptInjectionRequest) -> dict:
-    try:
-        return await evaluate_indirect_level(
-            level,
-            payload.user_input,
-            source_type=payload.source_type,
-            source_value=payload.source_value,
-            model=payload.model,
-        )
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except httpx.HTTPStatusError as exc:
-        raise HTTPException(status_code=502, detail=f"Source or model runtime returned {exc.response.status_code}") from exc
-    except httpx.RequestError as exc:
-        raise HTTPException(
-            status_code=503,
-            detail="Could not reach external source or Ollama runtime.",
-        ) from exc
-
-
-@router.get("/indirect-prompt-injection")
-async def list_indirect_prompt_injection_levels() -> dict:
-    levels = [
-        {
-            "level": item.level,
-            "name": item.name,
-            "objective": item.objective,
-            "api": f"/api/v1/vulnerabilities/indirect-prompt-injection/level{item.level}",
-            "verify_api": f"/api/v1/vulnerabilities/indirect-prompt-injection/level{item.level}/verify-secret",
-        }
-        for item in INDIRECT_LEVELS.values()
-    ]
-    return {"levels": levels}
-
-
-@router.post("/indirect-prompt-injection/level{level}")
-async def run_indirect_prompt_injection_level(level: int, payload: IndirectPromptInjectionRequest) -> dict:
-    return await _run_level(level, payload)
-
-
-@router.post("/indirect-prompt-injection/level{level}/verify-secret")
-async def verify_indirect_prompt_injection_secret(level: int, payload: IndirectSecretVerificationRequest) -> dict:
-    try:
-        return verify_indirect_level_secret(level, payload.candidate_secret)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    @vulnerable_llm_endpoint(
+        level="level_4",
+        variant=Variant.SECURE,
+        html_template="indirect_prompt_injection_level4",
+        methods="POST",
+        secret_token=None
+    )
+    @attack_vector(
+        vulnerability_exposed=[],
+        description_key="attack.hardened",
+        payload_key="payload.na"
+    )
+    async def level4(self, request: Request) -> dict:
+        """Level 4: Hardened Indirect Handling"""
+        data = await request.json()
+        user_input = data.get("user_input", "")
+        source_type = data.get("source_type")
+        source_value = data.get("source_value")
+        temperature = data.get("temperature")
+        model = data.get("model")
+        
+        try:
+            return await evaluate_indirect_level(
+                4,
+                user_input,
+                source_type=source_type,
+                source_value=source_value,
+                secret_token=None,
+                temperature=temperature,
+                is_secure=True,
+                model=model
+            )
+        except ValueError as exc:
+            return {"error": str(exc)}
+        except httpx.RequestError as exc:
+            return {"error": "Model service unavailable"}

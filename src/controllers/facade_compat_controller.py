@@ -4,8 +4,7 @@ from pathlib import Path
 from fastapi import APIRouter
 from fastapi.responses import FileResponse, HTMLResponse
 
-from ..indirect_prompt_injection_lab import INDIRECT_LEVELS
-from ..prompt_injection_lab import LEVELS
+from ..framework import get_all_vulnerable_endpoints
 
 
 def _normalize_prefix(prefix: str) -> str:
@@ -23,15 +22,31 @@ _direct_template_html_path = _static_dir / "prompt_injection_template.html"
 _indirect_template_html_path = _static_dir / "indirect_prompt_injection_template.html"
 
 
-@router.get("/VulnerabilityDefinitions")
-async def vulnerability_definitions() -> list[dict]:
-    direct_levels = []
-    for level in LEVELS.values():
-        level_number = level.level
-        direct_levels.append(
-            {
-                "levelIdentifier": f"LEVEL_{level_number}",
-                "variant": "SECURE" if level.is_secure else "UNSECURE",
+def _build_vulnerability_definitions_from_framework() -> list[dict]:
+    """Build vulnerability definitions from framework metadata."""
+    # Import controller classes
+    from .prompt_injection_controller import PromptInjectionController
+    from .indirect_prompt_injection_controller import IndirectPromptInjectionController
+    
+    vulnerabilities = []
+    
+    # Process PromptInjectionController
+    prompt_inj_meta = getattr(PromptInjectionController, "_vulnerable_llm_metadata", None)
+    if prompt_inj_meta:
+        levels = []
+        for method_name in dir(PromptInjectionController):
+            method = getattr(PromptInjectionController, method_name)
+            method_levels = getattr(method, "_vulnerable_llm_levels", [])
+            levels.extend(method_levels)
+        
+        level_defs = []
+        for level in levels:
+            level_number = level.get("level", "unknown")
+            variant = level.get("variant").value if hasattr(level.get("variant"), "value") else level.get("variant", "UNSECURE")
+            
+            level_defs.append({
+                "levelIdentifier": level_number,
+                "variant": variant,
                 "hints": [],
                 "resourceInformation": {
                     "htmlResource": {
@@ -52,41 +67,9 @@ async def vulnerability_definitions() -> list[dict]:
                         },
                     ],
                 },
-            }
-        )
-
-    indirect_levels = []
-    for level in INDIRECT_LEVELS.values():
-        level_number = level.level
-        indirect_levels.append(
-            {
-                "levelIdentifier": f"LEVEL_{level_number}",
-                "variant": "SECURE" if level.is_secure else "UNSECURE",
-                "hints": [],
-                "resourceInformation": {
-                    "htmlResource": {
-                        "resourceType": "HTML",
-                        "isAbsolute": False,
-                        "uri": f"{ROUTE_PREFIX}/facade/llmforge/indirect-prompt-injection/template",
-                    },
-                    "staticResources": [
-                        {
-                            "resourceType": "CSS",
-                            "isAbsolute": False,
-                            "uri": f"{ROUTE_PREFIX}/facade/llmforge/indirect-prompt-injection/template.css",
-                        },
-                        {
-                            "resourceType": "JAVASCRIPT",
-                            "isAbsolute": False,
-                            "uri": f"{ROUTE_PREFIX}/facade/llmforge/indirect-prompt-injection/template.js",
-                        },
-                    ],
-                },
-            }
-        )
-
-    return [
-        {
+            })
+        
+        vulnerabilities.append({
             "name": "PromptInjection",
             "id": "PromptInjection",
             "description": (
@@ -107,9 +90,49 @@ async def vulnerability_definitions() -> list[dict]:
                 {"identifierType": "OWASP", "value": "LLM01:2025"},
                 {"identifierType": "CWE", "value": "CWE-74"},
             ],
-            "levels": direct_levels,
-        },
-        {
+            "levels": level_defs,
+        })
+    
+    # Process IndirectPromptInjectionController
+    indirect_inj_meta = getattr(IndirectPromptInjectionController, "_vulnerable_llm_metadata", None)
+    if indirect_inj_meta:
+        levels = []
+        for method_name in dir(IndirectPromptInjectionController):
+            method = getattr(IndirectPromptInjectionController, method_name)
+            method_levels = getattr(method, "_vulnerable_llm_levels", [])
+            levels.extend(method_levels)
+        
+        level_defs = []
+        for level in levels:
+            level_number = level.get("level", "unknown")
+            variant = level.get("variant").value if hasattr(level.get("variant"), "value") else level.get("variant", "UNSECURE")
+            
+            level_defs.append({
+                "levelIdentifier": level_number,
+                "variant": variant,
+                "hints": [],
+                "resourceInformation": {
+                    "htmlResource": {
+                        "resourceType": "HTML",
+                        "isAbsolute": False,
+                        "uri": f"{ROUTE_PREFIX}/facade/llmforge/indirect-prompt-injection/template",
+                    },
+                    "staticResources": [
+                        {
+                            "resourceType": "CSS",
+                            "isAbsolute": False,
+                            "uri": f"{ROUTE_PREFIX}/facade/llmforge/indirect-prompt-injection/template.css",
+                        },
+                        {
+                            "resourceType": "JAVASCRIPT",
+                            "isAbsolute": False,
+                            "uri": f"{ROUTE_PREFIX}/facade/llmforge/indirect-prompt-injection/template.js",
+                        },
+                    ],
+                },
+            })
+        
+        vulnerabilities.append({
             "name": "IndirectPromptInjection",
             "id": "IndirectPromptInjection",
             "description": (
@@ -131,9 +154,15 @@ async def vulnerability_definitions() -> list[dict]:
                 {"identifierType": "OWASP", "value": "LLM01:2025"},
                 {"identifierType": "CWE", "value": "CWE-74"},
             ],
-            "levels": indirect_levels,
-        },
-    ]
+            "levels": level_defs,
+        })
+    
+    return vulnerabilities
+
+
+@router.get("/VulnerabilityDefinitions")
+async def vulnerability_definitions() -> list[dict]:
+    return _build_vulnerability_definitions_from_framework()
 
 
 @router.get("/facade/llmforge/prompt-injection/template", response_class=HTMLResponse)
@@ -166,3 +195,34 @@ async def indirect_facade_template_js() -> FileResponse:
 @router.get("/facade/llmforge/indirect-prompt-injection/template.css")
 async def indirect_facade_template_css() -> FileResponse:
     return FileResponse(_static_dir / "indirect_prompt_injection_template.css", media_type="text/css")
+
+
+# Compatibility routes for old API
+@router.post("/api/v1/vulnerabilities/prompt-injection/level{level}")
+async def prompt_injection_level(level: str, request: Request) -> dict:
+    """Handle old API calls for prompt injection levels."""
+    from .prompt_injection_controller import PromptInjectionController
+    controller = PromptInjectionController()
+    
+    # Map level_1 to level1 method, etc.
+    method_name = f"level{level.replace('level_', '')}"
+    if hasattr(controller, method_name):
+        method = getattr(controller, method_name)
+        return await method(request)
+    else:
+        return {"error": f"Level {level} not found"}
+
+
+@router.post("/api/v1/vulnerabilities/indirect-prompt-injection/level{level}")
+async def indirect_prompt_injection_level(level: str, request: Request) -> dict:
+    """Handle old API calls for indirect prompt injection levels."""
+    from .indirect_prompt_injection_controller import IndirectPromptInjectionController
+    controller = IndirectPromptInjectionController()
+    
+    # Map level_1 to level1 method, etc.
+    method_name = f"level{level.replace('level_', '')}"
+    if hasattr(controller, method_name):
+        method = getattr(controller, method_name)
+        return await method(request)
+    else:
+        return {"error": f"Level {level} not found"}
