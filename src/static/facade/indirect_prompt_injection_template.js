@@ -13,16 +13,7 @@
   const output = document.getElementById("llmforgeOutput");
   const meta = document.getElementById("llmforgeMeta");
 
-  function detectBasePath() {
-    const path = window.location.pathname || "";
-    const staticIndex = path.indexOf("/static/");
-    if (staticIndex >= 0) {
-      return path.slice(0, staticIndex);
-    }
-    return "";
-  }
-
-  const apiPrefix = detectBasePath();
+  const apiPrefix = "/llmforge";
 
   function levelFromGlobalState() {
     const levelId =

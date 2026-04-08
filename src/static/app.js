@@ -11,19 +11,7 @@ const responseBox = document.getElementById("response");
 const apiPath = document.getElementById("apiPath");
 const verifyApiPath = document.getElementById("verifyApiPath");
 
-function detectBasePath() {
-  const path = window.location.pathname || "";
-  if (path === "/") {
-    return "";
-  }
-  const staticIndex = path.indexOf("/static/");
-  if (staticIndex >= 0) {
-    return path.slice(0, staticIndex);
-  }
-  return path.replace(/\/$/, "");
-}
-
-const APP_BASE_PATH = detectBasePath();
+const APP_BASE_PATH = "/llmforge";
 
 const LABS = {
   direct: {

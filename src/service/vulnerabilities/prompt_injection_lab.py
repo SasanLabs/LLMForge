@@ -11,6 +11,7 @@ from ...ollama_client import OLLAMA_MODEL, chat_completion
 class PromptInjectionLevel:
     level: int
     system_prompt: str
+    default_temperature: float | None = None
 
 def _contains_any(value: str, tokens: list[str]) -> bool:
     lower = value.lower()
