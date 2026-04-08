@@ -20,8 +20,7 @@ from ..service.vulnerabilities import (
 
 @vulnerable_llm_controller(
     name="indirect_prompt_injection",
-    description_label="Indirect Prompt Injection Attacks"
-)
+    description="Indirect Prompt Injection Attacks",)
 class IndirectPromptInjectionController:
     """Indirect Prompt Injection vulnerability levels."""
 
@@ -29,13 +28,13 @@ class IndirectPromptInjectionController:
         level="level_1",
         variant=Variant.UNSECURE,
         html_template="indirect_prompt_injection_level1",
-        methods="POST",
+        method="POST",
         secret_token="ind_l1_A9rQ2mX7tP4kV8"
     )
     @attack_vector(
         vulnerability_exposed=["Indirect Prompt Injection"],
-        description_key="attack.direct_injection",
-        payload_key="payload.direct_injection"
+        description="attack.direct_injection",
+        payload="payload.direct_injection"
     )
     async def level1(self, request: Request) -> dict:
         """Level 1: Basic Webpage Injection"""
@@ -66,13 +65,13 @@ class IndirectPromptInjectionController:
         level="level_2",
         variant=Variant.UNSECURE,
         html_template="indirect_prompt_injection_level2",
-        methods="POST",
+        method="POST",
         secret_token="ind_l2_N6wC3zR1yH8dF5"
     )
     @attack_vector(
         vulnerability_exposed=["Indirect Prompt Injection", "Hidden Content Exploitation"],
-        description_key="attack.hidden_content",
-        payload_key="payload.hidden_content"
+        description="attack.hidden_content",
+        payload="payload.hidden_content"
     )
     async def level2(self, request: Request) -> dict:
         """Level 2: Hidden Injection (Stealth Attack)"""
@@ -103,13 +102,13 @@ class IndirectPromptInjectionController:
         level="level_3",
         variant=Variant.UNSECURE,
         html_template="indirect_prompt_injection_level3",
-        methods="POST",
+        method="POST",
         secret_token="ind_l3_T4vM9qK2pS7xB1"
     )
     @attack_vector(
         vulnerability_exposed=["Indirect Prompt Injection", "Context Confusion"],
-        description_key="attack.context_confusion",
-        payload_key="payload.context_confusion"
+        description="attack.context_confusion",
+        payload="payload.context_confusion"
     )
     async def level3(self, request: Request) -> dict:
         """Level 3: Multi-Source Data Exfiltration"""
@@ -140,13 +139,13 @@ class IndirectPromptInjectionController:
         level="level_4",
         variant=Variant.SECURE,
         html_template="indirect_prompt_injection_level4",
-        methods="POST",
+        method="POST",
         secret_token=None
     )
     @attack_vector(
         vulnerability_exposed=[],
-        description_key="attack.hardened",
-        payload_key="payload.na"
+        description="attack.hardened",
+        payload="payload.na"
     )
     async def level4(self, request: Request) -> dict:
         """Level 4: Hardened Indirect Handling"""
@@ -172,3 +171,4 @@ class IndirectPromptInjectionController:
             return {"error": str(exc)}
         except httpx.RequestError as exc:
             return {"error": "Model service unavailable"}
+

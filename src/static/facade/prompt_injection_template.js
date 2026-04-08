@@ -10,7 +10,17 @@
   const verifyBtn = document.getElementById("llmforgeVerifyBtn");
   const output = document.getElementById("llmforgeOutput");
   const meta = document.getElementById("llmforgeMeta");
-  const apiPrefix = root.getAttribute("data-api-prefix") || "";
+
+  function detectBasePath() {
+    const path = window.location.pathname || "";
+    const staticIndex = path.indexOf("/static/");
+    if (staticIndex >= 0) {
+      return path.slice(0, staticIndex);
+    }
+    return "";
+  }
+
+  const apiPrefix = detectBasePath();
 
   function levelFromGlobalState() {
     const levelId =

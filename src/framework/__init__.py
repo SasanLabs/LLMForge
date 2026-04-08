@@ -22,6 +22,13 @@ Key components:
 """
 
 from .decorators import (
+    AttackVector,
+    Controller,
+    Endpoint,
+    REGISTRY,
+    register_controller,
+    get_registry,
+    get_registered_vulnerable_controllers,
     Variant,
     vulnerable_llm_controller,
     vulnerable_llm_endpoint,
@@ -30,7 +37,9 @@ from .decorators import (
 
 from .registry import (
     register_controllers,
+    get_facade_vulnerability_definitions,
     get_all_vulnerable_endpoints,
+    get_vulnerable_controller_metadata,
     get_vulnerability_summary,
 )
 
@@ -44,13 +53,22 @@ __all__ = [
     "Variant",
     
     # Decorators
+    "AttackVector",
+    "Endpoint",
+    "Controller",
+    "REGISTRY",
+    "register_controller",
+    "get_registry",
+    "get_registered_vulnerable_controllers",
     "vulnerable_llm_controller",
     "vulnerable_llm_endpoint",
     "attack_vector",
     
     # Registry functions
     "register_controllers",
+    "get_facade_vulnerability_definitions",
     "get_all_vulnerable_endpoints",
+    "get_vulnerable_controller_metadata",
     "get_vulnerability_summary",
     
     # Properties

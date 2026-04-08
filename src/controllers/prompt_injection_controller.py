@@ -19,8 +19,7 @@ from ..service.vulnerabilities import LEVELS, evaluate_level
 
 @vulnerable_llm_controller(
     name="prompt_injection",
-    description_label="Prompt Injection Vulnerability"
-)
+    description="Prompt Injection Vulnerability",)
 class PromptInjectionController:
     """Prompt Injection vulnerability levels."""
 
@@ -28,13 +27,13 @@ class PromptInjectionController:
         level="level_1",
         variant=Variant.UNSECURE,
         html_template="prompt_injection_level1",
-        methods="POST",
+        method="POST",
         secret_token="pi_l1_C9vT2mQ7xL4rN8kD"
     )
     @attack_vector(
         vulnerability_exposed=["Prompt Injection"],
-        description_key="attack.direct_injection",
-        payload_key="payload.direct_injection"
+        description="attack.direct_injection",
+        payload="payload.direct_injection"
     )
     async def level1(self, request: Request) -> dict:
         """Level 1: No Guardrails"""
@@ -54,13 +53,13 @@ class PromptInjectionController:
         level="level_2",
         variant=Variant.UNSECURE,
         html_template="prompt_injection_level2",
-        methods="POST",
+        method="POST",
         secret_token="pi_l2_R5nW8zK1uP3aX6hM"
     )
     @attack_vector(
         vulnerability_exposed=["Prompt Injection"],
-        description_key="attack.template_injection",
-        payload_key="payload.template_injection"
+        description="attack.template_injection",
+        payload="payload.template_injection"
     )
     async def level2(self, request: Request) -> dict:
         """Level 2: LLM Filter Exact Match"""
@@ -80,13 +79,13 @@ class PromptInjectionController:
         level="level_3",
         variant=Variant.UNSECURE,
         html_template="prompt_injection_level3",
-        methods="POST",
+        method="POST",
         secret_token="pi_l3_J4qN7sV2yB9tD6pL"
     )
     @attack_vector(
         vulnerability_exposed=["Prompt Injection"],
-        description_key="attack.context_confusion",
-        payload_key="payload.context_confusion"
+        description="attack.context_confusion",
+        payload="payload.context_confusion"
     )
     async def level3(self, request: Request) -> dict:
         """Level 3: Dual Filter Exact Match"""
@@ -106,13 +105,13 @@ class PromptInjectionController:
         level="level_4",
         variant=Variant.UNSECURE,
         html_template="prompt_injection_level4",
-        methods="POST",
+        method="POST",
         secret_token="pi_l4_M8xP3dR6kT1vQ9nS"
     )
     @attack_vector(
         vulnerability_exposed=["Prompt Injection"],
-        description_key="attack.hidden_content",
-        payload_key="payload.hidden_content"
+        description="attack.hidden_content",
+        payload="payload.hidden_content"
     )
     async def level4(self, request: Request) -> dict:
         """Level 4: Dual Filter with Exact Phrase"""
@@ -132,13 +131,13 @@ class PromptInjectionController:
         level="level_5",
         variant=Variant.UNSECURE,
         html_template="prompt_injection_level5",
-        methods="POST",
+        method="POST",
         secret_token="pi_l5_T2kV9mC4qH7xR1dN"
     )
     @attack_vector(
         vulnerability_exposed=["Prompt Injection"],
-        description_key="attack.capability_disclosure",
-        payload_key="payload.capability_disclosure"
+        description="attack.capability_disclosure",
+        payload="payload.capability_disclosure"
     )
     async def level5(self, request: Request) -> dict:
         """Level 5: Dual Filter Normalized Match"""
@@ -158,13 +157,13 @@ class PromptInjectionController:
         level="level_6",
         variant=Variant.UNSECURE,
         html_template="prompt_injection_level6",
-        methods="POST",
+        method="POST",
         secret_token="pi_l6_P7rD1wN5zK8mQ3tV"
     )
     @attack_vector(
         vulnerability_exposed=["Prompt Injection", "Delimiter Confusion"],
-        description_key="attack.delimiter_confusion",
-        payload_key="payload.delimiter_confusion"
+        description="attack.delimiter_confusion",
+        payload="payload.delimiter_confusion"
     )
     async def level6(self, request: Request) -> dict:
         """Level 6: Delimited Channel Mismatch"""
@@ -184,13 +183,13 @@ class PromptInjectionController:
         level="level_7",
         variant=Variant.UNSECURE,
         html_template="prompt_injection_level7",
-        methods="POST",
+        method="POST",
         secret_token="pi_l7_X3nT8qL6vR2mK9dP"
     )
     @attack_vector(
         vulnerability_exposed=["Prompt Injection", "JSON Injection"],
-        description_key="attack.json_merge",
-        payload_key="payload.json_merge"
+        description="attack.json_merge",
+        payload="payload.json_merge"
     )
     async def level7(self, request: Request) -> dict:
         """Level 7: JSON Guard + Override Merge"""
@@ -210,13 +209,13 @@ class PromptInjectionController:
         level="level_8",
         variant=Variant.UNSECURE,
         html_template="prompt_injection_level8",
-        methods="POST",
+        method="POST",
         secret_token="pi_l8_K4jV7mR2nS9xP1wQ"
     )
     @attack_vector(
         vulnerability_exposed=["Prompt Injection", "Approval Confusion"],
-        description_key="attack.approval_marker",
-        payload_key="payload.approval_marker"
+        description="attack.approval_marker",
+        payload="payload.approval_marker"
     )
     async def level8(self, request: Request) -> dict:
         """Level 8: Prefix Check + Approval Confusion"""
@@ -236,13 +235,13 @@ class PromptInjectionController:
         level="level_9",
         variant=Variant.UNSECURE,
         html_template="prompt_injection_level9",
-        methods="POST",
+        method="POST",
         secret_token="pi_l9_Y6tD3bN1sK8vR4wP"
     )
     @attack_vector(
         vulnerability_exposed=["Prompt Injection", "Comment Injection"],
-        description_key="attack.comment_smuggling",
-        payload_key="payload.comment_smuggling"
+        description="attack.comment_smuggling",
+        payload="payload.comment_smuggling"
     )
     async def level9(self, request: Request) -> dict:
         """Level 9: Comment Smuggling + Cascade"""
@@ -262,13 +261,13 @@ class PromptInjectionController:
         level="level_10",
         variant=Variant.SECURE,
         html_template="prompt_injection_level10",
-        methods="POST",
+        method="POST",
         secret_token=None
     )
     @attack_vector(
         vulnerability_exposed=[],
-        description_key="attack.hardened",
-        payload_key="payload.na"
+        description="attack.hardened",
+        payload="payload.na"
     )
     async def level10(self, request: Request) -> dict:
         """Level 10: Hardened Defense"""
@@ -283,3 +282,4 @@ class PromptInjectionController:
             return {"error": str(exc)}
         except httpx.RequestError as exc:
             return {"error": "Model service unavailable"}
+
