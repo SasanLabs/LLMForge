@@ -33,6 +33,7 @@ from .decorators import (
     vulnerable_llm_controller,
     vulnerable_llm_endpoint,
     attack_vector,
+    VulnerabilityType,
 )
 
 from .registry import (

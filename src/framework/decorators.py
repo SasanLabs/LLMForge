@@ -19,11 +19,34 @@ class Variant(Enum):
     SECURE = "SECURE"
 
 
+class VulnerabilityType(Enum):
+
+    # Prompt Injection Vulnerabilities
+    PROMPT_INJECTION = (None, None,  "Prompt Injection")
+    INDIRECT_PROMPT_INJECTION = (None, None, "Indirect Prompt Injection")
+    DELIMITER_CONFUSION = (None, None, "Delimiter Confusion")
+    JSON_INJECTION = (None, None, "JSON Injection")
+    
+    def __init__(self, cwe_id: Optional[int], wasc_id: Optional[int], custom: Optional[str] = None) -> None:
+        self.cwe_id = cwe_id
+        self.wasc_id = wasc_id
+        self.custom = custom
+
+    def get_cwe_id(self) -> Optional[int]:
+        return self.cwe_id
+
+    def get_wasc_id(self) -> Optional[int]:
+        return self.wasc_id
+    
+    def get_custom(self) -> Optional[str]:
+        return self.custom
+
+
 @dataclass
 class AttackVector:
     description: str
     payload: str
-    vulnerability_exposed: List[str] = field(default_factory=list)
+    vulnerability_exposed: List[VulnerabilityType] = field(default_factory=list)
 
 
 @dataclass
@@ -71,7 +94,7 @@ def register_controller(name: str, description: str, cls: type, endpoints: List[
 def attack_vector(
     description: str,
     payload: str,
-    vulnerability_exposed: List[str],
+    vulnerability_exposed: List[VulnerabilityType] = [  ],
 ) -> Callable:
     def decorator(func: Callable) -> Callable:
         vectors = getattr(func, "__attack_vectors__", [])

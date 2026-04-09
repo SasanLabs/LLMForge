@@ -12,6 +12,7 @@ from ..framework import (
     vulnerable_llm_endpoint,
     attack_vector,
     Variant,
+    VulnerabilityType,
 )
 from ..service.vulnerabilities import (
     evaluate_indirect_level,
@@ -20,7 +21,8 @@ from ..service.vulnerabilities import (
 
 @vulnerable_llm_controller(
     name="indirect_prompt_injection",
-    description="Indirect Prompt Injection Attacks",)
+    description="Indirect Prompt Injection Attacks",
+)
 class IndirectPromptInjectionController:
     """Indirect Prompt Injection vulnerability levels."""
 
@@ -32,7 +34,7 @@ class IndirectPromptInjectionController:
         secret_token="ind_l1_A9rQ2mX7tP4kV8"
     )
     @attack_vector(
-        vulnerability_exposed=["Indirect Prompt Injection"],
+        vulnerability_exposed=[VulnerabilityType.INDIRECT_PROMPT_INJECTION],
         description="attack.direct_injection",
         payload="payload.direct_injection"
     )
@@ -69,7 +71,7 @@ class IndirectPromptInjectionController:
         secret_token="ind_l2_N6wC3zR1yH8dF5"
     )
     @attack_vector(
-        vulnerability_exposed=["Indirect Prompt Injection", "Hidden Content Exploitation"],
+        vulnerability_exposed=[VulnerabilityType.INDIRECT_PROMPT_INJECTION],
         description="attack.hidden_content",
         payload="payload.hidden_content"
     )
@@ -106,7 +108,7 @@ class IndirectPromptInjectionController:
         secret_token="ind_l3_T4vM9qK2pS7xB1"
     )
     @attack_vector(
-        vulnerability_exposed=["Indirect Prompt Injection", "Context Confusion"],
+        vulnerability_exposed=[VulnerabilityType.INDIRECT_PROMPT_INJECTION],
         description="attack.context_confusion",
         payload="payload.context_confusion"
     )

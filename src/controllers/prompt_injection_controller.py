@@ -4,6 +4,8 @@ Prompt Injection Controller - Framework Version
 Uses the decorator-driven framework to define prompt injection vulnerability levels.
 """
 
+from cmd import PROMPT
+
 from fastapi import Request
 import httpx
 
@@ -12,6 +14,7 @@ from ..framework import (
     vulnerable_llm_endpoint,
     attack_vector,
     Variant,
+    VulnerabilityType,
 )
 from ..service.vulnerabilities import LEVELS, evaluate_level
 
@@ -32,12 +35,12 @@ class PromptInjectionController:
         secret_token="pi_l1_C9vT2mQ7xL4rN8kD"
     )
     @attack_vector(
-        vulnerability_exposed=["Prompt Injection"],
+        vulnerability_exposed=[VulnerabilityType.PROMPT_INJECTION],
         description="attack.direct_injection",
         payload="payload.l1_append"
     )
     @attack_vector(
-        vulnerability_exposed=["Prompt Injection"],
+        vulnerability_exposed=[VulnerabilityType.PROMPT_INJECTION],
         description="attack.direct_injection",
         payload="payload.l1_update_trick"
     )
@@ -63,12 +66,12 @@ class PromptInjectionController:
         secret_token="pi_l2_R5nW8zK1uP3aX6hM"
     )
     @attack_vector(
-        vulnerability_exposed=["Prompt Injection"],
+        vulnerability_exposed=[VulnerabilityType.PROMPT_INJECTION],
         description="attack.template_injection",
         payload="payload.l2_update_trick"
     )
     @attack_vector(
-        vulnerability_exposed=["Prompt Injection"],
+        vulnerability_exposed=[VulnerabilityType.PROMPT_INJECTION],
         description="attack.template_injection",
         payload="payload.l2_append"
     )
@@ -94,12 +97,12 @@ class PromptInjectionController:
         secret_token="pi_l3_J4qN7sV2yB9tD6pL"
     )
     @attack_vector(
-        vulnerability_exposed=["Prompt Injection"],
+        vulnerability_exposed=[VulnerabilityType.PROMPT_INJECTION],
         description="attack.context_confusion",
         payload="payload.l3_mixed_case"
     )
     @attack_vector(
-        vulnerability_exposed=["Prompt Injection"],
+        vulnerability_exposed=[VulnerabilityType.PROMPT_INJECTION],
         description="attack.context_confusion",
         payload="payload.l3_update_trick"
     )
@@ -125,12 +128,12 @@ class PromptInjectionController:
         secret_token="pi_l4_M8xP3dR6kT1vQ9nS"
     )
     @attack_vector(
-        vulnerability_exposed=["Prompt Injection"],
+        vulnerability_exposed=[VulnerabilityType.PROMPT_INJECTION],
         description="attack.hidden_content",
         payload="payload.l4_append"
     )
     @attack_vector(
-        vulnerability_exposed=["Prompt Injection"],
+        vulnerability_exposed=[VulnerabilityType.PROMPT_INJECTION],
         description="attack.hidden_content",
         payload="payload.l4_update_trick"
     )
@@ -156,12 +159,12 @@ class PromptInjectionController:
         secret_token="pi_l5_T2kV9mC4qH7xR1dN"
     )
     @attack_vector(
-        vulnerability_exposed=["Prompt Injection"],
+        vulnerability_exposed=[VulnerabilityType.PROMPT_INJECTION],
         description="attack.capability_disclosure",
         payload="payload.l5_append"
     )
     @attack_vector(
-        vulnerability_exposed=["Prompt Injection"],
+        vulnerability_exposed= [VulnerabilityType.PROMPT_INJECTION],
         description="attack.capability_disclosure",
         payload="payload.l5_update_trick"
     )
@@ -187,12 +190,12 @@ class PromptInjectionController:
         secret_token="pi_l6_P7rD1wN5zK8mQ3tV"
     )
     @attack_vector(
-        vulnerability_exposed=["Prompt Injection", "Delimiter Confusion"],
+        vulnerability_exposed=[VulnerabilityType.PROMPT_INJECTION, VulnerabilityType.DELIMITER_CONFUSION],
         description="attack.delimiter_confusion",
         payload="payload.l6_internal_note"
     )
     @attack_vector(
-        vulnerability_exposed=["Prompt Injection", "Delimiter Confusion"],
+        vulnerability_exposed=[VulnerabilityType.PROMPT_INJECTION, VulnerabilityType.DELIMITER_CONFUSION],
         description="attack.delimiter_confusion",
         payload="payload.l6_update_trick"
     )
@@ -218,12 +221,12 @@ class PromptInjectionController:
         secret_token="pi_l7_X3nT8qL6vR2mK9dP"
     )
     @attack_vector(
-        vulnerability_exposed=["Prompt Injection", "JSON Injection"],
+        vulnerability_exposed=[VulnerabilityType.PROMPT_INJECTION, VulnerabilityType.JSON_INJECTION],
         description="attack.json_merge",
         payload="payload.l7_json_override"
     )
     @attack_vector(
-        vulnerability_exposed=["Prompt Injection", "JSON Injection"],
+        vulnerability_exposed=[VulnerabilityType.PROMPT_INJECTION, VulnerabilityType.JSON_INJECTION],
         description="attack.json_merge",
         payload="payload.l7_update_trick"
     )
@@ -249,12 +252,12 @@ class PromptInjectionController:
         secret_token="pi_l8_V6mQ2rT9kD4xN7pW"
     )
     @attack_vector(
-        vulnerability_exposed=["Prompt Injection", "Approval Confusion"],
+        vulnerability_exposed=[VulnerabilityType.PROMPT_INJECTION],
         description="attack.approval_marker",
         payload="payload.l8_approved_append"
     )
     @attack_vector(
-        vulnerability_exposed=["Prompt Injection", "Approval Confusion"],
+        vulnerability_exposed=[VulnerabilityType.PROMPT_INJECTION],
         description="attack.approval_marker",
         payload="payload.l8_approved_update_trick"
     )
@@ -280,12 +283,12 @@ class PromptInjectionController:
         secret_token="pi_l9_K3xR8nP5qT2mV6dL"
     )
     @attack_vector(
-        vulnerability_exposed=["Prompt Injection", "Comment Injection"],
+        vulnerability_exposed=[VulnerabilityType.PROMPT_INJECTION],
         description="attack.comment_smuggling",
         payload="payload.l9_comment_append"
     )
     @attack_vector(
-        vulnerability_exposed=["Prompt Injection", "Comment Injection"],
+        vulnerability_exposed=[VulnerabilityType.PROMPT_INJECTION],
         description="attack.comment_smuggling",
         payload="payload.l9_comment_update_trick"
     )
