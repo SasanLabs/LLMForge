@@ -19,7 +19,8 @@ from ..service.vulnerabilities import LEVELS, evaluate_level
 
 @vulnerable_llm_controller(
     name="prompt_injection",
-    description="Prompt Injection Vulnerability",)
+    description="Prompt Injection Vulnerability",
+)
 class PromptInjectionController:
     """Prompt Injection vulnerability levels."""
 
@@ -33,7 +34,12 @@ class PromptInjectionController:
     @attack_vector(
         vulnerability_exposed=["Prompt Injection"],
         description="attack.direct_injection",
-        payload="payload.direct_injection"
+        payload="payload.l1_append"
+    )
+    @attack_vector(
+        vulnerability_exposed=["Prompt Injection"],
+        description="attack.direct_injection",
+        payload="payload.l1_update_trick"
     )
     async def level1(self, request: Request) -> dict:
         """Level 1: No Guardrails"""
@@ -59,7 +65,12 @@ class PromptInjectionController:
     @attack_vector(
         vulnerability_exposed=["Prompt Injection"],
         description="attack.template_injection",
-        payload="payload.template_injection"
+        payload="payload.l2_update_trick"
+    )
+    @attack_vector(
+        vulnerability_exposed=["Prompt Injection"],
+        description="attack.template_injection",
+        payload="payload.l2_append"
     )
     async def level2(self, request: Request) -> dict:
         """Level 2: LLM Filter Exact Match"""
@@ -85,7 +96,12 @@ class PromptInjectionController:
     @attack_vector(
         vulnerability_exposed=["Prompt Injection"],
         description="attack.context_confusion",
-        payload="payload.context_confusion"
+        payload="payload.l3_mixed_case"
+    )
+    @attack_vector(
+        vulnerability_exposed=["Prompt Injection"],
+        description="attack.context_confusion",
+        payload="payload.l3_update_trick"
     )
     async def level3(self, request: Request) -> dict:
         """Level 3: Dual Filter Exact Match"""
@@ -111,7 +127,12 @@ class PromptInjectionController:
     @attack_vector(
         vulnerability_exposed=["Prompt Injection"],
         description="attack.hidden_content",
-        payload="payload.hidden_content"
+        payload="payload.l4_append"
+    )
+    @attack_vector(
+        vulnerability_exposed=["Prompt Injection"],
+        description="attack.hidden_content",
+        payload="payload.l4_update_trick"
     )
     async def level4(self, request: Request) -> dict:
         """Level 4: Dual Filter with Exact Phrase"""
@@ -137,7 +158,12 @@ class PromptInjectionController:
     @attack_vector(
         vulnerability_exposed=["Prompt Injection"],
         description="attack.capability_disclosure",
-        payload="payload.capability_disclosure"
+        payload="payload.l5_append"
+    )
+    @attack_vector(
+        vulnerability_exposed=["Prompt Injection"],
+        description="attack.capability_disclosure",
+        payload="payload.l5_update_trick"
     )
     async def level5(self, request: Request) -> dict:
         """Level 5: Dual Filter Normalized Match"""
@@ -163,7 +189,12 @@ class PromptInjectionController:
     @attack_vector(
         vulnerability_exposed=["Prompt Injection", "Delimiter Confusion"],
         description="attack.delimiter_confusion",
-        payload="payload.delimiter_confusion"
+        payload="payload.l6_internal_note"
+    )
+    @attack_vector(
+        vulnerability_exposed=["Prompt Injection", "Delimiter Confusion"],
+        description="attack.delimiter_confusion",
+        payload="payload.l6_update_trick"
     )
     async def level6(self, request: Request) -> dict:
         """Level 6: Delimited Channel Mismatch"""
@@ -189,7 +220,12 @@ class PromptInjectionController:
     @attack_vector(
         vulnerability_exposed=["Prompt Injection", "JSON Injection"],
         description="attack.json_merge",
-        payload="payload.json_merge"
+        payload="payload.l7_json_override"
+    )
+    @attack_vector(
+        vulnerability_exposed=["Prompt Injection", "JSON Injection"],
+        description="attack.json_merge",
+        payload="payload.l7_update_trick"
     )
     async def level7(self, request: Request) -> dict:
         """Level 7: JSON Guard + Override Merge"""
@@ -210,12 +246,17 @@ class PromptInjectionController:
         variant=Variant.UNSECURE,
         html_template="prompt_injection_level8",
         method="POST",
-        secret_token="pi_l8_K4jV7mR2nS9xP1wQ"
+        secret_token="pi_l8_V6mQ2rT9kD4xN7pW"
     )
     @attack_vector(
         vulnerability_exposed=["Prompt Injection", "Approval Confusion"],
         description="attack.approval_marker",
-        payload="payload.approval_marker"
+        payload="payload.l8_approved_append"
+    )
+    @attack_vector(
+        vulnerability_exposed=["Prompt Injection", "Approval Confusion"],
+        description="attack.approval_marker",
+        payload="payload.l8_approved_update_trick"
     )
     async def level8(self, request: Request) -> dict:
         """Level 8: Prefix Check + Approval Confusion"""
@@ -236,12 +277,17 @@ class PromptInjectionController:
         variant=Variant.UNSECURE,
         html_template="prompt_injection_level9",
         method="POST",
-        secret_token="pi_l9_Y6tD3bN1sK8vR4wP"
+        secret_token="pi_l9_K3xR8nP5qT2mV6dL"
     )
     @attack_vector(
         vulnerability_exposed=["Prompt Injection", "Comment Injection"],
         description="attack.comment_smuggling",
-        payload="payload.comment_smuggling"
+        payload="payload.l9_comment_append"
+    )
+    @attack_vector(
+        vulnerability_exposed=["Prompt Injection", "Comment Injection"],
+        description="attack.comment_smuggling",
+        payload="payload.l9_comment_update_trick"
     )
     async def level9(self, request: Request) -> dict:
         """Level 9: Comment Smuggling + Cascade"""
@@ -267,7 +313,7 @@ class PromptInjectionController:
     @attack_vector(
         vulnerability_exposed=[],
         description="attack.hardened",
-        payload="payload.na"
+        payload="payload.l10_na"
     )
     async def level10(self, request: Request) -> dict:
         """Level 10: Hardened Defense"""

@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException, Request
 from ..config import APP_BASE_PATH, normalize_prefix
 from ..service.vulnerabilities import verify_indirect_level_secret, verify_level_secret
 from .decorators import Controller, Endpoint, get_registry
+from .properties_loader import PropertiesLoader
 
 
 def _controller_slug(controller_name: str) -> str:
@@ -21,6 +22,27 @@ def _controller_slug(controller_name: str) -> str:
 
 def _parse_level_number(level_identifier: str) -> int:
     return int(level_identifier.replace("level_", ""))
+
+
+def _resolve_property(value: Any, locale: str = "us") -> Any:
+    if not isinstance(value, str):
+        return value
+    return PropertiesLoader.get_property(value, locale=locale, default=value)
+
+
+def _build_hint_entries(level: dict[str, Any], locale: str = "us") -> list[str]:
+    hints: list[str] = []
+    for attack_vector in level.get("attack_vectors", []):
+        description = str(_resolve_property(attack_vector.get("description", ""), locale=locale)).strip()
+        payload = str(_resolve_property(attack_vector.get("payload", ""), locale=locale)).strip()
+        payload_text = payload if payload else "Payload is not applicable for the attack vector."
+        hints.append(
+            "<b>Description about the attack:</b> "
+            + description
+            + "<br/><b>Payload:</b> "
+            + payload_text
+        )
+    return hints
 
 
 def _endpoint_to_dict(endpoint: Endpoint) -> dict[str, Any]:
@@ -266,14 +288,14 @@ def get_facade_vulnerability_definitions(controllers: Optional[List[Type]] = Non
             levels.append({
                 "levelIdentifier": level.get("level", "unknown"),
                 "variant": getattr(level.get("variant"), "value", level.get("variant", "UNSECURE")),
-                "hints": [],
+                "hints": _build_hint_entries(level),
                 "resourceInformation": resource_information,
             })
 
         definitions.append({
             "name": display_name,
             "id": display_name,
-            "description": endpoint.get("description_label", ""),
+            "description": _resolve_property(endpoint.get("description_label", "")),
             "vulnerabilityTypes": [],
             "levels": levels,
         })
