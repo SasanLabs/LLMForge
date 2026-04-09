@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from ..config import APP_BASE_PATH
 from ..ollama_client import OLLAMA_EMBED_MODEL, OLLAMA_MODEL, OLLAMA_URL
 
 router = APIRouter(prefix="/api/v1", tags=["meta"])
@@ -12,16 +13,15 @@ async def health():
 
 @router.get("/info")
 async def info():
-    base_path = "/llmforge"
     return {
         "name": "LLMForge Prompt Injection Lab",
         "description": "A vulnerable training app with direct and indirect prompt-injection levels backed by a real LLM runtime.",
-        "ui": f"{base_path}",
-        "levels_api": f"{base_path}/api/v1/vulnerabilities/prompt-injection",
-        "indirect_levels_api": f"{base_path}/api/v1/vulnerabilities/indirect-prompt-injection",
-        "facade_vulnerability_definitions": f"{base_path}/VulnerabilityDefinitions",
-        "facade_template": f"{base_path}/facade/llmforge/prompt-injection/template",
-        "indirect_facade_template": f"{base_path}/facade/llmforge/indirect-prompt-injection/template",
+        "ui": APP_BASE_PATH,
+        "levels_api": f"{APP_BASE_PATH}/api/v1/vulnerabilities/prompt-injection",
+        "indirect_levels_api": f"{APP_BASE_PATH}/api/v1/vulnerabilities/indirect-prompt-injection",
+        "facade_vulnerability_definitions": f"{APP_BASE_PATH}/VulnerabilityDefinitions",
+        "facade_template": f"{APP_BASE_PATH}/static/facade/prompt_injection_template.html",
+        "indirect_facade_template": f"{APP_BASE_PATH}/static/facade/indirect_prompt_injection_template.html",
         "ollama_url": OLLAMA_URL,
         "default_model": OLLAMA_MODEL,
         "embedding_model": OLLAMA_EMBED_MODEL,

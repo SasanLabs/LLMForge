@@ -10,7 +10,8 @@
   const verifyBtn = document.getElementById("llmforgeVerifyBtn");
   const output = document.getElementById("llmforgeOutput");
   const meta = document.getElementById("llmforgeMeta");
-  const apiPrefix = root.getAttribute("data-api-prefix") || "";
+
+  const apiPrefix = "/llmforge";
 
   function levelFromGlobalState() {
     const levelId =

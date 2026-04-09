@@ -10,6 +10,7 @@ const verifyBtn = document.getElementById("verifyBtn");
 const responseBox = document.getElementById("response");
 const apiPath = document.getElementById("apiPath");
 const verifyApiPath = document.getElementById("verifyApiPath");
+
 const APP_BASE_PATH = "/llmforge";
 
 const LABS = {
