@@ -71,7 +71,7 @@ def register_controller(name: str, description: str, cls: type, endpoints: List[
 def attack_vector(
     description: str,
     payload: str,
-    vulnerability_exposed: List[str]
+    vulnerability_exposed: List[str],
 ) -> Callable:
     def decorator(func: Callable) -> Callable:
         vectors = getattr(func, "__attack_vectors__", [])
@@ -79,7 +79,7 @@ def attack_vector(
             AttackVector(
                 description=description,
                 payload=payload,
-                vulnerability_exposed=vulnerability_exposed
+                vulnerability_exposed=vulnerability_exposed,
             )
         )
         setattr(func, "__attack_vectors__", vectors)

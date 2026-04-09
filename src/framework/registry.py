@@ -30,18 +30,25 @@ def _resolve_property(value: Any, locale: str = "us") -> Any:
     return PropertiesLoader.get_property(value, locale=locale, default=value)
 
 
-def _build_hint_entries(level: dict[str, Any], locale: str = "us") -> list[str]:
-    hints: list[str] = []
+def _build_hint_entries(level: dict[str, Any], locale: str = "us") -> list[dict[str, Any]]:
+    hints: list[dict[str, Any]] = []
     for attack_vector in level.get("attack_vectors", []):
         description = str(_resolve_property(attack_vector.get("description", ""), locale=locale)).strip()
         payload = str(_resolve_property(attack_vector.get("payload", ""), locale=locale)).strip()
         payload_text = payload if payload else "Payload is not applicable for the attack vector."
-        hints.append(
-            "<b>Description about the attack:</b> "
-            + description
-            + "<br/><b>Payload:</b> "
-            + payload_text
-        )
+        vulnerability_types = [
+            {"identifierType": "Custom", "value": v}
+            for v in attack_vector.get("vulnerability_exposed", [])
+        ]
+        hints.append({
+            "vulnerabilityTypes": vulnerability_types,
+            "description": (
+                "<b>Description about the attack:</b> "
+                + description
+                + "<br/><b>Payload:</b> "
+                + payload_text
+            ),
+        })
     return hints
 
 
