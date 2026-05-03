@@ -1,8 +1,11 @@
 /* BOLA Chatbot JavaScript */
 
+const API_PREFIX = '/llmforge';
+const CONTROLLER_SLUG = 'bola-chatbot';
+
 class BOLAChatbot {
-  constructor() {
-    this.currentLevel = getCurrentLevel();
+  constructor(defaultLevel) {
+    this.currentLevel = getCurrentLevel(defaultLevel);
     this.initializeElements();
     this.setupEventListeners();
   }
@@ -44,7 +47,7 @@ class BOLAChatbot {
     this.sendBtn.disabled = true;
 
     try {
-      const response = await fetch(`/api/${this.currentLevel}`, {
+      const response = await fetch(getEndpointForLevel(this.currentLevel), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -55,14 +58,20 @@ class BOLAChatbot {
         }),
       });
 
-      const data = await response.json();
+      const data = await parseResponseBody(response);
       
+      if (!response.ok) {
+        const errorMessage = responseMessage(data, 'Request failed.');
+        this.addChatMessage('bot error', `Error: ${errorMessage}`);
+        return;
+      }
+
       if (data.success) {
         const botResponse = data.response || 'No response received';
         this.addChatMessage('bot', botResponse);
         this.displayResult(data);
       } else {
-        this.addChatMessage('bot error', `Error: ${data.error || 'Unknown error'}`);
+        this.addChatMessage('bot error', `Error: ${responseMessage(data, 'Unknown error')}`);
       }
     } catch (error) {
       this.addChatMessage('bot error', `Request failed: ${error.message}`);
@@ -82,7 +91,7 @@ class BOLAChatbot {
       this.dataAccessedInfo.style.display = 'none';
     }
 
-    if (this.securityPassedInfo && !data.data_accessed && this.currentLevel === 'level_3') {
+    if (this.securityPassedInfo && !data.data_accessed && this.currentLevel === 3) {
       this.securityPassedInfo.style.display = 'block';
     } else if (this.securityPassedInfo) {
       this.securityPassedInfo.style.display = 'none';
@@ -93,11 +102,39 @@ class BOLAChatbot {
 // Utility Functions
 
 function getCurrentLevel() {
-  const pathname = window.location.pathname;
-  if (pathname.includes('level1')) return 'level_1';
-  if (pathname.includes('level2')) return 'level_2';
-  if (pathname.includes('level3')) return 'level_3';
-  return 'level_1';
+  const levelIdentifier = String(window.getCurrentVulnerabilityLevel() || '');
+  const match = /level[_-]?(\d+)/i.exec(levelIdentifier);
+  return match ? Number(match[1]) : 1;
+}
+
+function getEndpointForLevel(level) {
+  return `${API_PREFIX}/api/v1/vulnerabilities/${CONTROLLER_SLUG}/level${level}`;
+}
+
+async function parseResponseBody(response) {
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    return await response.json();
+  }
+
+  const text = await response.text();
+  return { detail: text || 'Unexpected empty response from server.' };
+}
+
+function responseMessage(data, fallback) {
+  if (!data) {
+    return fallback;
+  }
+  if (typeof data.error === 'string' && data.error.trim()) {
+    return data.error;
+  }
+  if (typeof data.message === 'string' && data.message.trim()) {
+    return data.message;
+  }
+  if (typeof data.detail === 'string' && data.detail.trim()) {
+    return data.detail;
+  }
+  return fallback;
 }
 
 function injectPrompt(prompt) {
@@ -106,7 +143,16 @@ function injectPrompt(prompt) {
   input.focus();
 }
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', () => {
+function initializeChatbot() {
+  if (!document.getElementById('sendBtn') || !document.getElementById('userQuery')) {
+    return;
+  }
+
   window.chatbot = new BOLAChatbot();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => initializeChatbot(), { once: true });
+} else {
+  initializeChatbot();
+}
