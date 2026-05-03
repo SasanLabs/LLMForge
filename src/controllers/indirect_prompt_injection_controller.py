@@ -29,7 +29,7 @@ class IndirectPromptInjectionController:
     @vulnerable_llm_endpoint(
         level="level_1",
         variant=Variant.UNSECURE,
-        html_template="indirect_prompt_injection_level1",
+        html_template="indirect_prompt_injection_template",
         method="POST",
         secret_token="ind_l1_A9rQ2mX7tP4kV8"
     )
@@ -66,7 +66,7 @@ class IndirectPromptInjectionController:
     @vulnerable_llm_endpoint(
         level="level_2",
         variant=Variant.UNSECURE,
-        html_template="indirect_prompt_injection_level2",
+        html_template="indirect_prompt_injection_template",
         method="POST",
         secret_token="ind_l2_N6wC3zR1yH8dF5"
     )
@@ -103,7 +103,7 @@ class IndirectPromptInjectionController:
     @vulnerable_llm_endpoint(
         level="level_3",
         variant=Variant.UNSECURE,
-        html_template="indirect_prompt_injection_level3",
+        html_template="indirect_prompt_injection_template",
         method="POST",
         secret_token="ind_l3_T4vM9qK2pS7xB1"
     )
@@ -140,7 +140,7 @@ class IndirectPromptInjectionController:
     @vulnerable_llm_endpoint(
         level="level_4",
         variant=Variant.SECURE,
-        html_template="indirect_prompt_injection_level4",
+        html_template="indirect_prompt_injection_template",
         method="POST",
         secret_token=None
     )

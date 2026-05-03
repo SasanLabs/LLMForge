@@ -11,6 +11,7 @@ from .config import APP_BASE_PATH
 # Framework-based controllers
 from .controllers.prompt_injection_controller import PromptInjectionController
 from .controllers.indirect_prompt_injection_controller import IndirectPromptInjectionController
+from .controllers.bola_chatbot_controller import BOLAChatbotController
 from .framework import register_controllers
 
 app = FastAPI(title="LLMForge Prompt Injection Lab")

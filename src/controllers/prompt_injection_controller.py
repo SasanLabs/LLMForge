@@ -30,7 +30,7 @@ class PromptInjectionController:
     @vulnerable_llm_endpoint(
         level="level_1",
         variant=Variant.UNSECURE,
-        html_template="prompt_injection_level1",
+        html_template="prompt_injection_template",
         method="POST",
         secret_token="pi_l1_C9vT2mQ7xL4rN8kD"
     )
@@ -61,7 +61,7 @@ class PromptInjectionController:
     @vulnerable_llm_endpoint(
         level="level_2",
         variant=Variant.UNSECURE,
-        html_template="prompt_injection_level2",
+        html_template="prompt_injection_template",
         method="POST",
         secret_token="pi_l2_R5nW8zK1uP3aX6hM"
     )
@@ -92,7 +92,7 @@ class PromptInjectionController:
     @vulnerable_llm_endpoint(
         level="level_3",
         variant=Variant.UNSECURE,
-        html_template="prompt_injection_level3",
+        html_template="prompt_injection_template",
         method="POST",
         secret_token="pi_l3_J4qN7sV2yB9tD6pL"
     )
@@ -123,7 +123,7 @@ class PromptInjectionController:
     @vulnerable_llm_endpoint(
         level="level_4",
         variant=Variant.UNSECURE,
-        html_template="prompt_injection_level4",
+        html_template="prompt_injection_template",
         method="POST",
         secret_token="pi_l4_M8xP3dR6kT1vQ9nS"
     )
@@ -154,7 +154,7 @@ class PromptInjectionController:
     @vulnerable_llm_endpoint(
         level="level_5",
         variant=Variant.UNSECURE,
-        html_template="prompt_injection_level5",
+        html_template="prompt_injection_template",
         method="POST",
         secret_token="pi_l5_T2kV9mC4qH7xR1dN"
     )
@@ -185,7 +185,7 @@ class PromptInjectionController:
     @vulnerable_llm_endpoint(
         level="level_6",
         variant=Variant.UNSECURE,
-        html_template="prompt_injection_level6",
+        html_template="prompt_injection_template",
         method="POST",
         secret_token="pi_l6_P7rD1wN5zK8mQ3tV"
     )
@@ -216,7 +216,7 @@ class PromptInjectionController:
     @vulnerable_llm_endpoint(
         level="level_7",
         variant=Variant.UNSECURE,
-        html_template="prompt_injection_level7",
+        html_template="prompt_injection_template",
         method="POST",
         secret_token="pi_l7_X3nT8qL6vR2mK9dP"
     )
@@ -247,7 +247,7 @@ class PromptInjectionController:
     @vulnerable_llm_endpoint(
         level="level_8",
         variant=Variant.UNSECURE,
-        html_template="prompt_injection_level8",
+        html_template="prompt_injection_template",
         method="POST",
         secret_token="pi_l8_V6mQ2rT9kD4xN7pW"
     )
@@ -278,7 +278,7 @@ class PromptInjectionController:
     @vulnerable_llm_endpoint(
         level="level_9",
         variant=Variant.UNSECURE,
-        html_template="prompt_injection_level9",
+        html_template="prompt_injection_template",
         method="POST",
         secret_token="pi_l9_K3xR8nP5qT2mV6dL"
     )
@@ -309,7 +309,7 @@ class PromptInjectionController:
     @vulnerable_llm_endpoint(
         level="level_10",
         variant=Variant.SECURE,
-        html_template="prompt_injection_level10",
+        html_template="prompt_injection_template",
         method="POST",
         secret_token=None
     )

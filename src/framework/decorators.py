@@ -26,6 +26,7 @@ class VulnerabilityType(Enum):
     INDIRECT_PROMPT_INJECTION = (None, None, "Indirect Prompt Injection")
     DELIMITER_CONFUSION = (None, None, "Delimiter Confusion")
     JSON_INJECTION = (None, None, "JSON Injection")
+    BOLA = (None, None, "Broken Object Level Authorization (BOLA) in LLMs")
     
     def __init__(self, cwe_id: Optional[int], wasc_id: Optional[int], custom: Optional[str] = None) -> None:
         self.cwe_id = cwe_id
