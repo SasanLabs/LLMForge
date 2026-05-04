@@ -14,6 +14,7 @@ class BOLAChatbot {
     this.userQueryInput = document.getElementById('userQuery');
     this.sendBtn = document.getElementById('sendBtn');
     this.chatHistory = document.getElementById('chatHistory');
+    this.chatArea = document.getElementById('chatArea');
   }
 
   setupEventListeners() {
@@ -28,6 +29,9 @@ class BOLAChatbot {
   addChatMessage(role, content) {
     if (!this.chatHistory) {
       return;
+    }
+    if (this.chatArea) {
+      this.chatArea.style.display = 'block';
     }
     const messageDiv = document.createElement('div');
     messageDiv.className = `chat-message ${role}`;
