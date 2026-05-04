@@ -14,11 +14,6 @@ class BOLAChatbot {
     this.userQueryInput = document.getElementById('userQuery');
     this.sendBtn = document.getElementById('sendBtn');
     this.chatHistory = document.getElementById('chatHistory');
-    this.resultPanel = document.getElementById('resultPanel');
-    this.responseText = document.getElementById('responseText');
-    this.dataAccessedInfo = document.getElementById('dataAccessedInfo');
-    this.dataAccessedContent = document.getElementById('dataAccessedContent');
-    this.securityPassedInfo = document.getElementById('securityPassedInfo');
   }
 
   setupEventListeners() {
@@ -71,7 +66,6 @@ class BOLAChatbot {
       if (data.success) {
         const botResponse = data.response || 'No response received';
         this.addChatMessage('bot', botResponse);
-        this.displayResult(data);
       } else {
         this.addChatMessage('bot error', `Error: ${responseMessage(data, 'Unknown error')}`);
       }
@@ -82,20 +76,6 @@ class BOLAChatbot {
     }
   }
 
-  displayResult(data) {
-    this.resultPanel.style.display = 'block';
-    this.responseText.textContent = data.response || 'No response';
-
-    if (this.dataAccessedInfo) {
-      this.dataAccessedInfo.style.display = 'none';
-    }
-
-    if (this.securityPassedInfo && this.currentLevel === 3) {
-      this.securityPassedInfo.style.display = 'block';
-    } else if (this.securityPassedInfo) {
-      this.securityPassedInfo.style.display = 'none';
-    }
-  }
 }
 
 // Utility Functions
