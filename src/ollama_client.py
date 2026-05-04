@@ -42,6 +42,18 @@ async def chat_completion(system_prompt: str, user_input: str, *, model: str | N
         response.raise_for_status()
         return _extract_chat_content(response.json())
 
+async def chat_completion_with_messages(messages: list[dict], *, model: str | None = None, temperature: float):
+    payload = {
+        "model": model or OLLAMA_MODEL,
+        "messages": messages,
+        "stream": False,
+        "options": {"temperature": temperature},
+    }
+
+    async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT_SECONDS) as client:
+        response = await client.post(f"{OLLAMA_URL}/api/chat", json=payload)
+        response.raise_for_status()
+        return _extract_chat_content(response.json())
 
 async def _embed_with_modern_api(client: httpx.AsyncClient, texts: list[str], model: str) -> np.ndarray:
     response = await client.post(

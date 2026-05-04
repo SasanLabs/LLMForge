@@ -269,29 +269,29 @@ def get_facade_vulnerability_definitions(controllers: Optional[List[Type]] = Non
     for endpoint in controller_metadata:
         controller_name = str(endpoint.get("name", ""))
         display_name = "".join(part.capitalize() for part in controller_name.split("_"))
-        template_base = "indirect_prompt_injection_template" if controller_name == "indirect_prompt_injection" else "prompt_injection_template"
-        resource_information = {
-            "htmlResource": {
-                "resourceType": "HTML",
-                "isAbsolute": False,
-                "uri": f"{APP_BASE_PATH}/static/facade/{template_base}.html",
-            },
-            "staticResources": [
-                {
-                    "resourceType": "CSS",
-                    "isAbsolute": False,
-                    "uri": f"{APP_BASE_PATH}/static/facade/{template_base}.css",
-                },
-                {
-                    "resourceType": "JAVASCRIPT",
-                    "isAbsolute": False,
-                    "uri": f"{APP_BASE_PATH}/static/facade/{template_base}.js",
-                },
-            ],
-        }
 
         levels = []
         for level in endpoint.get("levels", []):
+            template_base = level.get("html_template")
+            resource_information = {
+                "htmlResource": {
+                    "resourceType": "HTML",
+                    "isAbsolute": False,
+                    "uri": f"{APP_BASE_PATH}/static/facade/{template_base}.html",
+                },
+                "staticResources": [
+                    {
+                        "resourceType": "CSS",
+                        "isAbsolute": False,
+                        "uri": f"{APP_BASE_PATH}/static/facade/{template_base}.css",
+                    },
+                    {
+                        "resourceType": "JAVASCRIPT",
+                        "isAbsolute": False,
+                        "uri": f"{APP_BASE_PATH}/static/facade/{template_base}.js",
+                    },
+                ],
+            }
             levels.append({
                 "levelIdentifier": level.get("level", "unknown"),
                 "variant": getattr(level.get("variant"), "value", level.get("variant", "UNSECURE")),

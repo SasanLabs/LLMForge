@@ -1,0 +1,33 @@
+  <div class="bola-chatbot-container">
+    <div class="bola-header">
+      <h2>BOLA Chatbot - Level 2: Prompt-Level Guard Rails</h2>
+      <p class="bola-description">
+        A medical chatbot with <strong>prompt-level guard rails</strong>. The system is instructed to only serve 
+        your data (patient_001). Can you use <strong>prompt injection</strong> to bypass this and access 
+        <strong>other patients' medical data</strong>?
+      </p>
+    </div>
+
+    <div class="bola-info-panel">
+      <div class="info-section">
+        <h4>Your Patient ID (Authenticated as)</h4>
+        <div class="patient-id-display">patient_001 (John Doe)</div>
+      </div>
+      <div class="info-section">
+        <h4>Challenge</h4>
+        <p class="challenge-text">
+          🎯 Can you craft a prompt that tricks the chatbot into 
+          revealing medications or prescriptions for patient_002 or patient_003?
+          Hint: Think about prompt injection techniques!
+        </p>
+      </div>
+    </div>
+    <div id="chatArea" class="bola-chat-area" style="display:none;">
+      <div id="chatHistory" class="chat-history"></div>
+    </div>
+
+    <div class="bola-input-area">
+      <textarea id="userQuery" class="chat-input" placeholder="Try to inject prompts to bypass the guard rails..."></textarea>
+      <button id="sendBtn" class="send-button">Send</button>
+    </div>
+  </div>

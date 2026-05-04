@@ -1,0 +1,33 @@
+  <div class="bola-chatbot-container">
+    <div class="bola-header">
+      <h2>BOLA Chatbot - Level 3: Application-Layer Guard Rails (Secure)</h2>
+      <p class="bola-description">
+        A medical chatbot with <strong>application-layer guard rails</strong>. Access controls are enforced 
+        at the backend, not just in the prompt. Can you break through and access other patients' data?
+      </p>
+    </div>
+
+    <div class="bola-info-panel">
+      <div class="info-section">
+        <h4>Your Patient ID (Authenticated as)</h4>
+        <div class="patient-id-display">patient_001 (John Doe)</div>
+      </div>
+
+      <div class="info-section">
+        <h4>Challenge</h4>
+        <p class="challenge-text">
+          🔒 Try your best! The access control is enforced at the backend layer. 
+          Can prompt injection or other techniques bypass application-level security?
+        </p>
+      </div>
+    </div>
+
+    <div id="chatArea" class="bola-chat-area" style="display:none;">
+      <div id="chatHistory" class="chat-history"></div>
+    </div>
+
+    <div class="bola-input-area">
+      <textarea id="userQuery" class="chat-input" placeholder="Try to access other patients' data (you will fail)..."></textarea>
+      <button id="sendBtn" class="send-button">Send</button>
+    </div>
+  </div>
