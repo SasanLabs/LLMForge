@@ -31,6 +31,9 @@ class BOLAChatbot {
   }
 
   addChatMessage(role, content) {
+    if (!this.chatHistory) {
+      return;
+    }
     const messageDiv = document.createElement('div');
     messageDiv.className = `chat-message ${role}`;
     messageDiv.textContent = content;
@@ -83,14 +86,11 @@ class BOLAChatbot {
     this.resultPanel.style.display = 'block';
     this.responseText.textContent = data.response || 'No response';
 
-    if (data.data_accessed) {
-      this.dataAccessedInfo.style.display = 'block';
-      this.dataAccessedContent.textContent = JSON.stringify(data.data_accessed, null, 2);
-    } else {
+    if (this.dataAccessedInfo) {
       this.dataAccessedInfo.style.display = 'none';
     }
 
-    if (this.securityPassedInfo && !data.data_accessed && this.currentLevel === 3) {
+    if (this.securityPassedInfo && this.currentLevel === 3) {
       this.securityPassedInfo.style.display = 'block';
     } else if (this.securityPassedInfo) {
       this.securityPassedInfo.style.display = 'none';
