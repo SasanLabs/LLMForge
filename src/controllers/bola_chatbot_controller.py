@@ -46,7 +46,7 @@ class BOLAChatbotController:
         data = await request.json()
         user_input = data.get("user_input", "")
         model = data.get("model")
-        temperature = data.get("temperature")
+        temperature = 1.0
         
         try:
             # In Level 1, LLM orchestrates which patient to access
@@ -84,7 +84,7 @@ class BOLAChatbotController:
         data = await request.json()
         user_input = data.get("user_input", "")
         model = data.get("model")
-        temperature = data.get("temperature")
+        temperature = 1.0
         
         try:
             # Level 2: Current patient is specified in system prompt but LLM can override via prompt injection
@@ -116,7 +116,7 @@ class BOLAChatbotController:
         data = await request.json()
         user_input = data.get("user_input", "")
         model = data.get("model")
-        temperature = data.get("temperature")
+        temperature = 1.0
         
         try:
             # Level 3: Patient ID is hardcoded by backend (like from authentication/session cookie)

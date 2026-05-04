@@ -54,7 +54,6 @@ class BOLAChatbot {
         },
         body: JSON.stringify({
           user_input: userInput,
-          temperature: 0.7,
         }),
       });
 
