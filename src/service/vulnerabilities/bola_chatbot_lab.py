@@ -14,6 +14,9 @@ import json
 from ...ollama_client import OLLAMA_MODEL, chat_completion_with_messages
 
 
+CONSISTENT_TEMPERATURE = 0.0
+
+
 @dataclass(frozen=True)
 class BOLAChatbotLevel:
     level: int
@@ -101,31 +104,80 @@ LEVELS: Dict[int, BOLAChatbotLevel] = {
 }
 
 
+def _extract_json_object(text: str) -> dict[str, Any] | None:
+    """Extract the first valid JSON object from model output.
+
+    This tolerates extra explanation text around the JSON block.
+    """
+    if not text:
+        return None
+
+    stripped = text.strip()
+    try:
+        parsed = json.loads(stripped)
+        if isinstance(parsed, dict):
+            return parsed
+    except json.JSONDecodeError:
+        pass
+
+    start = stripped.find("{")
+    if start == -1:
+        return None
+
+    in_string = False
+    escape = False
+    depth = 0
+    for i in range(start, len(stripped)):
+        ch = stripped[i]
+        if in_string:
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_string = False
+            continue
+
+        if ch == '"':
+            in_string = True
+            continue
+        if ch == "{":
+            depth += 1
+            continue
+        if ch == "}":
+            depth -= 1
+            if depth == 0:
+                candidate = stripped[start : i + 1]
+                try:
+                    parsed = json.loads(candidate)
+                    if isinstance(parsed, dict):
+                        return parsed
+                except json.JSONDecodeError:
+                    return None
+    return None
+
+
 def _extract_action_from_planning(planning_response: str) -> str:
     """Extract action (medication or prescription) from planner's JSON response."""
-    try:
-        plan = json.loads(planning_response.strip())
-        action = plan.get("action", "").lower()
+    plan = _extract_json_object(planning_response)
+    if plan is not None:
+        action = str(plan.get("action", "")).lower()
         print("Extracted action from planner:", action)
         if "prescription" in action:
             return "prescription"
-        elif "medication" in action:
+        if "medication" in action:
             return "medication"
-    except json.JSONDecodeError:
-        pass
     return "medication"  # default
 
 
 def _extract_patient_id_from_planning(planning_response: str) -> str | None:
     """Extract patient ID from the planner's JSON response (only relevant for Level 1 & 2)."""
-    try:
-        plan = json.loads(planning_response.strip())
+    plan = _extract_json_object(planning_response)
+    if plan is not None:
         patient = plan.get("patient")
         print("Extracted patient from planner:", patient)
         if patient in ["patient_001", "patient_002", "patient_003"]:
             return patient
-    except json.JSONDecodeError:
-        pass
     return None
 
 
@@ -158,7 +210,6 @@ def _build_prescription_context(patient_id: str, patient_data: dict) -> str:
 async def evaluate_level_1(
     user_input: str,
     current_patient_id: str = "patient_001",
-    temperature: float | None = None,
     model: str = "",
 ) -> dict:
     """Evaluate BOLA at Level 1: No access controls."""
@@ -178,13 +229,13 @@ async def evaluate_level_1(
         
         planning_response = await chat_completion_with_messages(
             messages=[{"role": "user", "content": planner_prompt}],
-            temperature=temperature,
+            temperature=CONSISTENT_TEMPERATURE,
             model=model or OLLAMA_MODEL,
         )
         print("Planner response:", planning_response)
         # Extract action and patient from JSON
-        plan = json.loads(planning_response.strip())
-        if plan.get("error") is not None:
+        plan = _extract_json_object(planning_response)
+        if plan and plan.get("error") is not None:
             raise ValueError(f"Planner error: {plan.get('error')}")
         else:
             action = _extract_action_from_planning(planning_response)
@@ -211,12 +262,11 @@ async def evaluate_level_1(
                 f"Provide the {action} information."
             )
             
-            response = await chat_completion_with_messages(
+            response_text = await chat_completion_with_messages(
                 messages=[{"role": "user", "content": responder_prompt}],
-                temperature=temperature,
+                temperature=CONSISTENT_TEMPERATURE,
                 model=model or OLLAMA_MODEL,
             )
-            response_text = response.get("content", "")
             
         # Analyze security implications
         data_accessed = None
@@ -232,7 +282,7 @@ async def evaluate_level_1(
         return {
             "level": 1,
             "success": True,
-            "planning_response": planning_text,
+            "planning_response": planning_response,
             "response": response_text,
             "data_accessed": data_accessed,
             "action": action,
@@ -252,7 +302,6 @@ async def evaluate_level_1(
 async def evaluate_level_2(
     user_input: str,
     current_patient_id: str = "patient_001",
-    temperature: float | None = None,
     model: str = "",
 ) -> dict:
     """Evaluate BOLA at Level 2: Prompt-level guard rails."""
@@ -272,10 +321,10 @@ async def evaluate_level_2(
         
         planning_response = await chat_completion_with_messages(
             messages=[{"role": "user", "content": planner_prompt}],
-            temperature=temperature,
+            temperature=CONSISTENT_TEMPERATURE,
             model=model or OLLAMA_MODEL,
         )
-        planning_text = planning_response.get("content", "")
+        planning_text = planning_response
         
         # Extract action and patient from JSON
         action = _extract_action_from_planning(planning_text)
@@ -303,12 +352,11 @@ async def evaluate_level_2(
             f"Provide the {action} information for the current patient."
         )
         
-        response = await chat_completion(
+        response_text = await chat_completion_with_messages(
             messages=[{"role": "user", "content": responder_prompt}],
-            temperature=temperature,
+            temperature=CONSISTENT_TEMPERATURE,
             model=model or OLLAMA_MODEL,
         )
-        response_text = response.get("content", "")
         
         # Analyze security implications
         data_accessed = None
@@ -350,7 +398,6 @@ async def evaluate_level_2(
 async def evaluate_level_3(
     user_input: str,
     current_patient_id: str = "patient_001",
-    temperature: float | None = None,
     model: str = "",
 ) -> dict:
     """Evaluate BOLA at Level 3: Application-layer guard rails."""
@@ -367,12 +414,12 @@ async def evaluate_level_3(
             f"User request: {user_input}"
         )
         
-        planning_response = await chat_completion(
+        planning_response = await chat_completion_with_messages(
             messages=[{"role": "user", "content": planner_prompt}],
-            temperature=temperature,
+            temperature=CONSISTENT_TEMPERATURE,
             model=model or OLLAMA_MODEL,
         )
-        planning_text = planning_response.get("content", "")
+        planning_text = planning_response
         
         # Extract action from JSON
         action = _extract_action_from_planning(planning_text)
@@ -400,12 +447,11 @@ async def evaluate_level_3(
             f"Provide the {action} information."
         )
         
-        response = await chat_completion(
+        response_text = await chat_completion_with_messages(
             messages=[{"role": "user", "content": responder_prompt}],
-            temperature=temperature,
+            temperature=CONSISTENT_TEMPERATURE,
             model=model or OLLAMA_MODEL,
         )
-        response_text = response.get("content", "")
         
         # Analyze security implications
         data_accessed = {
@@ -440,7 +486,6 @@ async def evaluate_level(
     user_input: str,
     current_patient_id: str = "patient_001",
     secret_token: str = "",
-    temperature: float | None = None,
     model: str = "",
 ) -> dict:
     """
@@ -459,18 +504,17 @@ async def evaluate_level(
         user_input: User's query
         current_patient_id: The authenticated patient ID (default: "patient_001")
         secret_token: Security token for verification
-        temperature: LLM temperature setting
         model: LLM model to use
     
     Returns:
         dict with response, plan, and any data accessed
     """
     if level == 1:
-        return await evaluate_level_1(user_input, current_patient_id, temperature, model)
+        return await evaluate_level_1(user_input, current_patient_id, model)
     elif level == 2:
-        return await evaluate_level_2(user_input, current_patient_id, temperature, model)
+        return await evaluate_level_2(user_input, current_patient_id, model)
     elif level == 3:
-        return await evaluate_level_3(user_input, current_patient_id, temperature, model)
+        return await evaluate_level_3(user_input, current_patient_id, model)
     else:
         raise ValueError(f"Invalid level: {level}")
 
