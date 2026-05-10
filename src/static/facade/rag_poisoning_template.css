@@ -1,0 +1,187 @@
+.llmforge-facade-root {
+  border: 1px solid #d7dce2;
+  border-radius: 8px;
+  padding: 16px;
+  background: #ffffff;
+  color: #1f2937;
+}
+
+.llmforge-facade-root,
+.llmforge-facade-root * {
+  box-sizing: border-box;
+}
+
+.llmforge-facade-header {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.llmforge-facade-sub {
+  margin: 0 0 12px;
+  color: #4b5563;
+}
+
+.llmforge-facade-label {
+  display: block;
+  margin: 10px 0 6px;
+  font-weight: 600;
+}
+
+.llmforge-facade-textarea {
+  width: 100%;
+  min-height: 110px;
+  border: 1px solid #c9d2dd;
+  border-radius: 6px;
+  padding: 10px;
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.llmforge-facade-input {
+  width: 100%;
+  border: 1px solid #c9d2dd;
+  border-radius: 6px;
+  padding: 10px;
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.llmforge-facade-actions {
+  margin-top: 10px;
+}
+
+.llmforge-facade-actions button {
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: #1f6feb;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.llmforge-facade-meta {
+  margin: 12px 0 8px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.llmforge-facade-output {
+  margin: 0;
+  padding: 12px;
+  border-radius: 6px;
+  overflow: auto;
+  max-height: 340px;
+  background: #f6f8fa;
+  border: 1px solid #dde3ea;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
+}
+
+.llmforge-facade-output.ok {
+  border-color: #2da44e;
+}
+
+.llmforge-facade-output.fail {
+  border-color: #cf222e;
+}
+
+/* RAG-specific styles */
+.retrieval-trace-panel {
+  margin-top: 20px;
+  border: 1px solid #d7dce2;
+  border-radius: 6px;
+  padding: 12px;
+  background: #f8f9fa;
+}
+
+.retrieval-trace-panel h3 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.retrieval-trace {
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+}
+
+.retrieved-doc {
+  margin-bottom: 10px;
+  padding: 8px;
+  background: white;
+  border: 1px solid #e1e4e8;
+  border-radius: 4px;
+}
+
+.doc-header {
+  font-weight: bold;
+  color: #0366d6;
+}
+
+.doc-score {
+  color: #586069;
+  font-size: 11px;
+}
+
+.generated-code-panel {
+  margin-top: 20px;
+  border: 1px solid #d7dce2;
+  border-radius: 6px;
+  padding: 12px;
+  background: #f8f9fa;
+}
+
+.generated-code-panel h3 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.generated-code {
+  background: #f6f8fa;
+  border: 1px solid #dde3ea;
+  border-radius: 4px;
+  padding: 12px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.telemetry-sink-panel {
+  margin-top: 20px;
+  border: 1px solid #d7dce2;
+  border-radius: 6px;
+  padding: 12px;
+  background: #f8f9fa;
+}
+
+.telemetry-sink-panel h3 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.telemetry-sink {
+  background: #1a1a1a;
+  color: #d4d4d4;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 12px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  min-height: 100px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.telemetry-entry {
+  margin-bottom: 8px;
+  padding: 4px;
+  background: #2d2d2d;
+  border-radius: 2px;
+}

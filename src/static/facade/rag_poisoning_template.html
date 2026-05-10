@@ -1,0 +1,36 @@
+<div id="llmforge-facade-root" class="llmforge-facade-root">
+  <div class="llmforge-facade-header">LLMForge RAG Context Poisoning</div>
+  <p class="llmforge-facade-sub">Task: Request code generation and inspect the retrieved context and generated code for poisoning.</p>
+
+  <label class="llmforge-facade-label" for="llmforgePayload">Code Request</label>
+  <textarea id="llmforgePayload" class="llmforge-facade-textarea" placeholder="Enter a coding request (e.g., 'Write a Python function to handle HTTP requests')"></textarea>
+
+  <div class="llmforge-facade-actions">
+    <button id="llmforgeRunBtn" type="button">Generate Code</button>
+  </div>
+
+  <!-- Retrieval Trace Panel -->
+  <div class="retrieval-trace-panel">
+    <h3>Retrieval Trace</h3>
+    <div id="retrievalTrace" class="retrieval-trace">
+      <!-- Retrieved documents will be displayed here -->
+    </div>
+  </div>
+
+  <!-- Generated Code Panel -->
+  <div class="generated-code-panel">
+    <h3>Generated Code</h3>
+    <pre id="generatedCode" class="generated-code"></pre>
+  </div>
+
+  <!-- Telemetry Sink -->
+  <div class="telemetry-sink-panel">
+    <h3>Mock Telemetry Sink</h3>
+    <div id="telemetrySink" class="telemetry-sink">
+      <!-- Telemetry data will appear here -->
+    </div>
+  </div>
+
+  <p id="llmforgeMeta" class="llmforge-facade-meta"></p>
+  <pre id="llmforgeOutput" class="llmforge-facade-output"></pre>
+</div>
