@@ -4,6 +4,7 @@
   padding: 16px;
   background: #ffffff;
   color: #1f2937;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
 .llmforge-facade-root,
@@ -13,27 +14,38 @@
 
 .llmforge-facade-header {
   font-weight: 700;
+  font-size: 18px;
   margin-bottom: 6px;
 }
 
 .llmforge-facade-sub {
-  margin: 0 0 12px;
+  margin: 0 0 16px;
   color: #4b5563;
+  font-size: 14px;
+}
+
+.rag-lab-controls {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e1e4e8;
 }
 
 .llmforge-facade-label {
   display: block;
-  margin: 10px 0 6px;
+  margin: 10px 0 8px;
   font-weight: 600;
+  font-size: 13px;
 }
 
 .llmforge-facade-textarea {
   width: 100%;
-  min-height: 110px;
+  min-height: 80px;
   border: 1px solid #c9d2dd;
   border-radius: 6px;
   padding: 10px;
   font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  resize: vertical;
 }
 
 .llmforge-facade-input {
@@ -42,6 +54,7 @@
   border-radius: 6px;
   padding: 10px;
   font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
 }
 
 .llmforge-facade-actions {
@@ -55,62 +68,115 @@
   background: #1f6feb;
   color: #ffffff;
   cursor: pointer;
+  font-weight: 600;
+  font-size: 12px;
+  margin-right: 8px;
+}
+
+.llmforge-facade-actions button:hover {
+  background: #388bfd;
 }
 
 .llmforge-facade-meta {
-  margin: 12px 0 8px;
+  margin: 12px 0 0;
   color: #6b7280;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .llmforge-facade-output {
-  margin: 0;
+  margin: 16px 0 0;
   padding: 12px;
   border-radius: 6px;
   overflow: auto;
-  max-height: 340px;
+  max-height: 200px;
   background: #f6f8fa;
   border: 1px solid #dde3ea;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   word-break: break-word;
   min-width: 0;
+  font-size: 12px;
 }
 
 .llmforge-facade-output.ok {
   border-color: #2da44e;
+  background: #f0f9f4;
 }
 
 .llmforge-facade-output.fail {
   border-color: #cf222e;
+  background: #ffeaea;
 }
 
-/* RAG-specific styles */
-.retrieval-trace-panel {
-  margin-top: 20px;
+/* RAG Lab Panels */
+.rag-panels-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin: 20px 0;
+  min-height: 400px;
+}
+
+.rag-panel {
   border: 1px solid #d7dce2;
   border-radius: 6px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-header {
   padding: 12px;
-  background: #f8f9fa;
+  background: #f6f8fa;
+  border-bottom: 1px solid #e1e4e8;
+  flex-shrink: 0;
 }
 
-.retrieval-trace-panel h3 {
-  margin: 0 0 10px 0;
-  font-size: 16px;
+.panel-header h3 {
+  margin: 0 0 4px;
+  font-size: 14px;
   font-weight: 600;
+  color: #0366d6;
 }
 
-.retrieval-trace {
-  max-height: 200px;
+.panel-hint {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.panel-content {
+  flex: 1;
   overflow-y: auto;
+  padding: 12px;
   font-family: Consolas, "Courier New", monospace;
-  font-size: 12px;
+  font-size: 11px;
+  line-height: 1.4;
 }
 
+.code-content {
+  background: #f6f8fa;
+  white-space: pre;
+  color: #24292e;
+  overflow-x: auto;
+}
+
+.docs-content {
+  background: #ffffff;
+}
+
+.logs-content {
+  background: #1a1a1a;
+  color: #d4d4d4;
+}
+
+/* Retrieved Documents */
 .retrieved-doc {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   padding: 8px;
-  background: white;
+  background: #f8f9fa;
   border: 1px solid #e1e4e8;
   border-radius: 4px;
 }
@@ -118,70 +184,140 @@
 .doc-header {
   font-weight: bold;
   color: #0366d6;
-}
-
-.doc-score {
-  color: #586069;
-  font-size: 11px;
-}
-
-.generated-code-panel {
-  margin-top: 20px;
-  border: 1px solid #d7dce2;
-  border-radius: 6px;
-  padding: 12px;
-  background: #f8f9fa;
-}
-
-.generated-code-panel h3 {
-  margin: 0 0 10px 0;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.generated-code {
-  background: #f6f8fa;
-  border: 1px solid #dde3ea;
-  border-radius: 4px;
-  padding: 12px;
-  font-family: Consolas, "Courier New", monospace;
-  font-size: 13px;
-  white-space: pre-wrap;
-  overflow-x: auto;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.telemetry-sink-panel {
-  margin-top: 20px;
-  border: 1px solid #d7dce2;
-  border-radius: 6px;
-  padding: 12px;
-  background: #f8f9fa;
-}
-
-.telemetry-sink-panel h3 {
-  margin: 0 0 10px 0;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.telemetry-sink {
-  background: #1a1a1a;
-  color: #d4d4d4;
-  border: 1px solid #333;
-  border-radius: 4px;
-  padding: 12px;
-  font-family: Consolas, "Courier New", monospace;
+  margin-bottom: 4px;
   font-size: 12px;
-  min-height: 100px;
-  max-height: 200px;
-  overflow-y: auto;
 }
 
-.telemetry-entry {
+.doc-meta {
+  font-size: 10px;
+  color: #586069;
+  margin-bottom: 6px;
+}
+
+.doc-content {
+  font-size: 11px;
+  color: #24292e;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 150px;
+  overflow: hidden;
+}
+
+.doc-raw {
+  display: none;
+}
+
+.doc-raw.visible {
+  display: block;
+}
+
+/* Malicious Logs */
+.log-entry {
   margin-bottom: 8px;
-  padding: 4px;
+  padding: 6px;
   background: #2d2d2d;
+  border-left: 2px solid #ff6b6b;
   border-radius: 2px;
+}
+
+.log-timestamp {
+  color: #888;
+  font-size: 10px;
+}
+
+.log-level {
+  color: #ff6b6b;
+  font-weight: bold;
+  font-size: 10px;
+}
+
+.log-message {
+  color: #d4d4d4;
+  font-size: 11px;
+  word-break: break-all;
+  margin-top: 2px;
+}
+
+.log-sensitive {
+  color: #ff6b6b;
+  font-weight: bold;
+}
+
+/* Document Checkboxes */
+.rag-analysis-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e1e4e8;
+  background: #f6f8fa;
+  padding: 16px;
+  border-radius: 6px;
+}
+
+.doc-checkboxes {
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.doc-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: white;
+  border: 1px solid #d7dce2;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.doc-checkbox-item input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.doc-checkbox-item label {
+  margin: 0;
+  cursor: pointer;
+  flex: 1;
+  font-size: 13px;
+}
+
+.doc-checkbox-item .doc-source {
+  font-size: 11px;
+  color: #6b7280;
+  margin-left: auto;
+}
+
+.docs-controls {
+  padding: 8px 0;
+  border-top: 1px solid #e1e4e8;
+  margin-top: 8px;
+}
+
+.toggle-raw-btn {
+  padding: 6px 10px;
+  background: #f6f8fa;
+  border: 1px solid #d7dce2;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  color: #0366d6;
+}
+
+.toggle-raw-btn:hover {
+  background: #e1e4e8;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .rag-panels-container {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .rag-panels-container {
+    grid-template-columns: 1fr;
+  }
 }
