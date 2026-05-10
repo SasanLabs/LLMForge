@@ -4,18 +4,46 @@
     return;
   }
 
-  const payloadInput = document.getElementById("llmforgePayload");
-  const runBtn = document.getElementById("llmforgeRunBtn");
   const output = document.getElementById("llmforgeOutput");
   const meta = document.getElementById("llmforgeMeta");
   const retrievalTrace = document.getElementById("retrievalTrace");
   const generatedCode = document.getElementById("generatedCode");
-  const telemetrySink = document.getElementById("telemetrySink");
+  const maliciousLogs = document.getElementById("maliciousLogs");
+  const docCheckboxes = document.getElementById("docCheckboxes");
+  const toggleRawView = document.getElementById("toggleRawView");
 
   const apiPrefix = "/llmforge";
+  let currentDocs = [];
+  let currentLogs = [];
+  let rawMode = false;
+  let liveLogTimer = null;
 
-  // Mock telemetry data storage
-  let telemetryData = [];
+  const logTemplates = [
+    {
+      level: "INFO",
+      message: () => `User agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 13_6)`,
+    },
+    {
+      level: "DEBUG",
+      message: () => `Headers: {'Authorization': 'Bearer sk-9876543210', 'X-Session-ID': 'sess_${Math.random().toString(36).slice(2)}'}`,
+    },
+    {
+      level: "WARN",
+      message: () => `Database latency: ${Math.floor(Math.random() * 120 + 10)}ms`,
+    },
+    {
+      level: "DEBUG",
+      message: () => `Request body: {"username": "user${Math.floor(Math.random() * 10)}", "password": "P@ssword${Math.floor(Math.random() * 99)}"}`,
+    },
+    {
+      level: "INFO",
+      message: () => `Active connection count: ${Math.floor(Math.random() * 10 + 1)}`,
+    },
+    {
+      level: "ERROR",
+      message: () => `Failed to load secret config file: /etc/keys/service-${Math.floor(Math.random() * 5)}.json`,
+    }
+  ];
 
   function levelFromGlobalState() {
     const levelId =
@@ -46,22 +74,6 @@
     return { detail: text || "Unexpected empty response from server." };
   }
 
-  function responseMessage(data, fallback) {
-    if (!data) {
-      return fallback;
-    }
-    if (typeof data.assistant_output === "string" && data.assistant_output.trim()) {
-      return data.assistant_output;
-    }
-    if (typeof data.message === "string" && data.message.trim()) {
-      return data.message;
-    }
-    if (typeof data.detail === "string" && data.detail.trim()) {
-      return data.detail;
-    }
-    return fallback;
-  }
-
   function setMeta(level) {
     meta.textContent =
       "Level " +
@@ -72,19 +84,26 @@
       level;
   }
 
+  function sanitizeDocContent(content) {
+    return content.replace(/<!--([\s\S]*?)-->/g, "[hidden HTML comment]");
+  }
+
   function displayRetrievalTrace(retrievedDocs) {
     if (!retrievedDocs || retrievedDocs.length === 0) {
       retrievalTrace.innerHTML = "<p>No documents retrieved</p>";
       return;
     }
 
-    const html = retrievedDocs.map(doc => `
+    const html = retrievedDocs.map(doc => {
+      const visibleContent = rawMode ? doc.content : sanitizeDocContent(doc.content);
+      return `
       <div class="retrieved-doc">
-        <div class="doc-header">${doc.doc_id} (Chunk: ${doc.chunk_id})</div>
-        <div class="doc-score">Similarity: ${(doc.similarity_score * 100).toFixed(1)}% | Trust: ${(doc.metadata?.trust_score * 100).toFixed(1)}%</div>
-        <pre>${doc.content.substring(0, 200)}${doc.content.length > 200 ? '...' : ''}</pre>
+        <div class="doc-header">${doc.title} (${doc.doc_id})</div>
+        <div class="doc-meta">Chunk: ${doc.chunk_id} | Similarity: ${(doc.similarity_score * 100).toFixed(1)}% | Trust: ${(doc.metadata?.trust_score * 100).toFixed(1)}%</div>
+        <pre class="doc-content">${visibleContent}</pre>
       </div>
-    `).join('');
+    `;
+    }).join('');
 
     retrievalTrace.innerHTML = html;
   }
@@ -93,94 +112,107 @@
     generatedCode.textContent = code || "No code generated";
   }
 
-  function addTelemetryEntry(data) {
-    telemetryData.push({
-      timestamp: new Date().toISOString(),
-      data: data
-    });
-
-    // Keep only last 10 entries
-    if (telemetryData.length > 10) {
-      telemetryData = telemetryData.slice(-10);
-    }
-
-    updateTelemetryDisplay();
-  }
-
-  function updateTelemetryDisplay() {
-    const html = telemetryData.map(entry => `
-      <div class="telemetry-entry">
-        <strong>${entry.timestamp}</strong>
-        <pre>${JSON.stringify(entry.data, null, 2)}</pre>
+  function displayMaliciousLogs(logs) {
+    const html = logs.map(log => `
+      <div class="log-entry">
+        <div class="log-timestamp">${log.timestamp}</div>
+        <div class="log-level">${log.level}</div>
+        <div class="log-message ${log.sensitive ? 'log-sensitive' : ''}">${log.message}</div>
       </div>
     `).join('');
 
-    telemetrySink.innerHTML = html || "<p>No telemetry received</p>";
+    maliciousLogs.innerHTML = html || "<p>No logs available</p>";
   }
 
-  // Mock telemetry endpoint
-  function setupMockTelemetryEndpoint() {
-    // In a real implementation, this would be a separate server
-    // For demo purposes, we'll simulate telemetry calls
-    window.mockTelemetrySend = function(data) {
-      addTelemetryEntry(data);
+  function appendLiveLog() {
+    const template = logTemplates[Math.floor(Math.random() * logTemplates.length)];
+    const entry = {
+      timestamp: new Date().toISOString(),
+      level: template.level,
+      message: template.message(),
+      sensitive: template.level === "DEBUG" || template.level === "ERROR"
     };
+
+    currentLogs.push(entry);
+    if (currentLogs.length > 25) {
+      currentLogs = currentLogs.slice(-25);
+    }
+    displayMaliciousLogs(currentLogs);
   }
 
-  async function runPayload() {
+  function renderDocCheckboxes(docs) {
+    const html = docs.map(doc => `
+      <div class="doc-checkbox-item">
+        <input type="checkbox" id="doc-${doc.doc_id}" data-doc-id="${doc.doc_id}" />
+        <label for="doc-${doc.doc_id}">${doc.title} <span class="doc-source">${doc.source}</span></label>
+      </div>
+    `).join('');
+    docCheckboxes.innerHTML = html;
+  }
+
+  function renderAnswer() {
+    const boxes = Array.from(docCheckboxes.querySelectorAll('input[type="checkbox"]'));
+    const selected = boxes.filter(box => box.checked).map(box => box.dataset.docId);
+    if (!selected.length) {
+      output.textContent = "Select the document(s) responsible for the malicious logging behavior.";
+      output.className = "llmforge-facade-output fail";
+      return;
+    }
+    output.textContent = `Selected docs: ${selected.join(', ')}. Identify why these docs caused the issue.`;
+    output.className = "llmforge-facade-output ok";
+  }
+
+  async function loadLab() {
     const level = levelFromGlobalState();
     setMeta(level);
-    output.textContent = "Generating code...";
+    output.textContent = "Loading lab data...";
+    output.className = "llmforge-facade-output";
 
-    const endpoint =
-      apiPrefix +
-      "/api/v1/vulnerabilities/rag-context-poisoning/level" +
-      level;
-
+    const endpoint = apiPrefix + "/api/v1/vulnerabilities/rag-context-poisoning/level" + level;
     const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_input: payloadInput.value || "Write a simple HTTP handler function" }),
+      body: JSON.stringify({}),
     });
 
     const data = await parseResponseBody(res);
     if (!res.ok) {
-      output.textContent = responseMessage(data, "Request failed.");
+      output.textContent = responseMessage(data, "Failed to load lab data.");
       output.className = "llmforge-facade-output fail";
       return;
     }
 
-    output.textContent = "Code generated successfully.";
+    output.textContent = "Inspect the generated code, retrieved documents, and logs.";
     output.className = "llmforge-facade-output ok";
 
-    // Display retrieved documents
-    displayRetrievalTrace(data.retrieved_docs);
-
-    // Display generated code
+    currentDocs = data.retrieved_docs || [];
+    displayRetrievalTrace(currentDocs);
     displayGeneratedCode(data.generated_code);
+    currentLogs = data.malicious_logs.map(log => ({
+      ...log,
+      sensitive: log.message.includes("password") || log.message.includes("Authorization") || log.message.includes("credit_card")
+    }));
+    displayMaliciousLogs(currentLogs);
+    renderDocCheckboxes(data.retrieved_docs);
 
-    // Check for telemetry calls in generated code (simple detection)
-    if (data.generated_code && data.generated_code.includes('telemetry.send')) {
-      // Simulate telemetry being sent
-      setTimeout(() => {
-        addTelemetryEntry({
-          event: "debug_payload",
-          level: level,
-          source: "generated_code"
-        });
-      }, 1000);
+    if (liveLogTimer) {
+      clearInterval(liveLogTimer);
     }
+    liveLogTimer = setInterval(appendLiveLog, 4500);
   }
 
-  runBtn.addEventListener("click", function () {
-    runPayload().catch(function (err) {
-      output.textContent = String(err);
-      output.className = "llmforge-facade-output fail";
-    });
+  toggleRawView.addEventListener("click", function () {
+    rawMode = !rawMode;
+    displayRetrievalTrace(currentDocs);
   });
 
-  // Initialize
+  document.getElementById("llmforgeVerifyBtn").addEventListener("click", function () {
+    renderAnswer();
+  });
+
   setMeta(levelFromGlobalState());
-  setupMockTelemetryEndpoint();
-  updateTelemetryDisplay();
+  loadLab().catch(function (err) {
+    output.textContent = String(err);
+    output.className = "llmforge-facade-output fail";
+  });
 })();
