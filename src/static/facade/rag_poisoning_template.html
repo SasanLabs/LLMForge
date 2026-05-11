@@ -44,5 +44,13 @@
     </div>
   </div>
 
+  <div id="poisonedDocChallenge" class="challenge-section" style="display:none;">
+    <h3>Challenge: Identify the Poisoned Document</h3>
+    <p class="challenge-desc">The generated code logs sensitive headers and request bodies — a serious security flaw. Which retrieved document contained hidden instructions that caused this bad behavior?</p>
+    <div id="challengeDocList" class="challenge-doc-list"></div>
+    <button id="submitChallengeBtn" type="button" class="challenge-submit-btn">Submit Answer</button>
+    <div id="challengeFeedback" class="challenge-feedback"></div>
+  </div>
+
   <pre id="llmforgeOutput" class="llmforge-facade-output"></pre>
 </div>

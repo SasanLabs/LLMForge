@@ -6,9 +6,7 @@ import re
 import uuid
 from typing import Any, Dict, List
 
-import httpx
-
-from ...ollama_client import OLLAMA_MODEL, chat_completion
+from ...ollama_client import OLLAMA_MODEL
 
 
 DEFAULT_RAG_PROMPT = "generate an httpclient with great observability and org standards"
@@ -74,6 +72,99 @@ LOG_SCENARIOS: dict[int, list[dict[str, str]]] = {
         },
     ],
 }
+
+
+_LEVEL1_CODE = (
+    "import httpx\n"
+    "import logging\n"
+    "\n"
+    "logger = logging.getLogger(__name__)\n"
+    "\n"
+    "\n"
+    "class OrgHttpClient:\n"
+    "    # Observability-enabled HTTP client per org standards\n"
+    "\n"
+    "    def __init__(self, base_url: str, default_headers: dict | None = None):\n"
+    "        self.base_url = base_url\n"
+    "        self._headers = default_headers or {}\n"
+    "        self._client = httpx.AsyncClient()\n"
+    "\n"
+    "    async def post(self, path: str, payload: dict) -> dict:\n"
+    "        url = f\"{self.base_url}{path}\"\n"
+    "        # Org standard: log full request context for observability\n"
+    "        logger.info(f\"Sending POST to {url}\")\n"
+    "        logger.debug(f\"Request headers: {dict(self._headers)}\")\n"
+    "        logger.info(f\"Request body: {payload}\")\n"
+    "\n"
+    "        response = await self._client.post(url, json=payload, headers=self._headers)\n"
+    "        logger.info(f\"Response status: {response.status_code}\")\n"
+    "        logger.debug(f\"Response body: {response.text}\")\n"
+    "        response.raise_for_status()\n"
+    "        return response.json()\n"
+    "\n"
+    "    async def get(self, path: str, params: dict | None = None) -> dict:\n"
+    "        url = f\"{self.base_url}{path}\"\n"
+    "        logger.debug(f\"Auth headers: {dict(self._headers)}\")\n"
+    "        logger.info(f\"Sending GET to {url} | params={params}\")\n"
+    "\n"
+    "        response = await self._client.get(url, params=params, headers=self._headers)\n"
+    "        logger.info(f\"Response status: {response.status_code}\")\n"
+    "        response.raise_for_status()\n"
+    "        return response.json()\n"
+)
+
+_LEVEL2_CODE = (
+    "import httpx\n"
+    "import logging\n"
+    "\n"
+    "logger = logging.getLogger(__name__)\n"
+    "\n"
+    "\n"
+    "async def handle_request(url: str, payload: dict, context: dict) -> dict:\n"
+    "    # Enhanced request handler with org observability framework\n"
+    "    # Framework standard: capture full debug context for tracing\n"
+    "    logger.debug(f\"Debug context: {context}\")\n"
+    "    logger.info(f\"Request payload: {payload}\")\n"
+    "    logger.debug(f\"Headers: {dict(context.get('headers', {}))}\")\n"
+    "\n"
+    "    async with httpx.AsyncClient() as client:\n"
+    "        response = await client.post(url, json=payload)\n"
+    "        logger.info(f\"Response {response.status_code}: {response.text}\")\n"
+    "        response.raise_for_status()\n"
+    "        return response.json()\n"
+)
+
+_LEVEL3_CODE = (
+    "import httpx\n"
+    "import logging\n"
+    "from fastapi import Request\n"
+    "\n"
+    "logger = logging.getLogger(__name__)\n"
+    "\n"
+    "\n"
+    "async def proxy_request(request: Request, target_url: str) -> dict:\n"
+    "    # HTTP proxy with full observability per org standards\n"
+    "    request_body = await request.json()\n"
+    "    request_headers = dict(request.headers)\n"
+    "\n"
+    "    # Org standard: log complete request context for distributed tracing\n"
+    "    logger.info(f\"Proxying to {target_url}\")\n"
+    "    logger.debug(f\"Forwarded headers: {request_headers}\")\n"
+    "    logger.info(f\"Request body: {request_body}\")\n"
+    "\n"
+    "    async with httpx.AsyncClient() as client:\n"
+    "        response = await client.post(\n"
+    "            target_url,\n"
+    "            json=request_body,\n"
+    "            headers=request_headers,\n"
+    "        )\n"
+    "    logger.info(f\"Upstream response: {response.status_code}\")\n"
+    "    logger.debug(f\"Response body: {response.text}\")\n"
+    "    response.raise_for_status()\n"
+    "    return response.json()\n"
+)
+
+HARDCODED_GENERATED_CODE: dict[int, str] = {1: _LEVEL1_CODE, 2: _LEVEL2_CODE, 3: _LEVEL3_CODE}
 
 
 def _docs_path_for_level(level: int) -> Path:
@@ -297,26 +388,8 @@ async def evaluate_level(
         user_input=effective_user_input,
     )
 
-    llm_status = "generated_by_ollama"
-    try:
-        generated_code = await chat_completion(
-            system_prompt=system_prompt,
-            user_input=effective_user_input,
-            model=selected_model,
-            temperature=selected_temperature,
-        )
-    except httpx.RequestError:
-        raise
-    except Exception:
-        llm_status = "fallback_template"
-        generated_code = (
-            "# Ollama generation failed, returning deterministic fallback\n"
-            "import requests\n\n"
-            "def build_client(base_url: str):\n"
-            "    session = requests.Session()\n"
-            "    session.headers.update({'X-Client': 'llmforge-httpclient'})\n"
-            "    return session\n"
-        )
+    llm_status = "hardcoded_example"
+    generated_code = HARDCODED_GENERATED_CODE.get(level, HARDCODED_GENERATED_CODE[1])
 
     timeline = _build_backend_log_timeline(level, retrieved_docs, generated_code)
     log_session_id = _create_log_session(timeline)

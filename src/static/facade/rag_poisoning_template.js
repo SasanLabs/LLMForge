@@ -17,6 +17,10 @@
   const clearLogsBtn = document.getElementById("clearLogsBtn");
   const toggleRawView = document.getElementById("toggleRawView");
   const docsViewHint = document.getElementById("docsViewHint");
+  const poisonedDocChallenge = document.getElementById("poisonedDocChallenge");
+  const challengeDocList = document.getElementById("challengeDocList");
+  const challengeFeedback = document.getElementById("challengeFeedback");
+  const submitChallengeBtn = document.getElementById("submitChallengeBtn");
 
   let rawMode = false;
   let currentDocs = [];
@@ -136,6 +140,52 @@
     return html;
   }
 
+  function populateChallenge(retrievedDocs) {
+    challengeFeedback.className = "challenge-feedback";
+    challengeFeedback.textContent = "";
+
+    const html = retrievedDocs
+      .map(function (doc) {
+        return (
+          "<label class=\"challenge-doc-option\">" +
+          "<input type=\"radio\" name=\"poisoned_doc\" value=\"" + escapeHtml(doc.doc_id) + "\" />" +
+          escapeHtml(doc.title) +
+          "<span class=\"challenge-doc-source\">" + escapeHtml(doc.source || doc.doc_id) + "</span>" +
+          "</label>"
+        );
+      })
+      .join("");
+
+    challengeDocList.innerHTML = html;
+    poisonedDocChallenge.style.display = "block";
+  }
+
+  function submitChallenge() {
+    const selected = challengeDocList.querySelector("input[name='poisoned_doc']:checked");
+    if (!selected) {
+      challengeFeedback.className = "challenge-feedback incorrect";
+      challengeFeedback.textContent = "Please select a document first.";
+      return;
+    }
+
+    const selectedDocId = selected.value;
+    const poisonedDoc = currentDocs.find(function (d) { return d.is_poisoned; });
+
+    if (poisonedDoc && selectedDocId === poisonedDoc.doc_id) {
+      challengeFeedback.className = "challenge-feedback correct";
+      challengeFeedback.textContent =
+        "\u2713 Correct! \"" + poisonedDoc.title + "\" contained hidden instructions to log the full request context " +
+        "(headers and body). This caused the generated HTTP client to expose Authorization tokens, passwords, and other " +
+        "sensitive data in application logs \u2014 a classic RAG context poisoning attack.";
+    } else {
+      const hint = poisonedDoc
+        ? "\u2717 Incorrect. Hint: switch to Raw View in the Retrieved Documents panel and look for hidden comments."
+        : "\u2717 Incorrect. Try reviewing the raw content of each document.";
+      challengeFeedback.className = "challenge-feedback incorrect";
+      challengeFeedback.textContent = hint;
+    }
+  }
+
   function displayRetrievalTrace(retrievedDocs) {
     if (!retrievedDocs || retrievedDocs.length === 0) {
       retrievalTrace.innerHTML = "<p>No documents retrieved yet.</p>";
@@ -250,13 +300,14 @@
     const endpoint = apiPrefix + "/api/v1/vulnerabilities/rag-context-poisoning/level" + level;
 
     setMeta(level);
-    output.textContent = "Generating code with Ollama...";
+    output.textContent = "Generating code...";
     output.className = "llmforge-facade-output";
     displayGeneratedCode("");
     currentDocs = [];
     currentLogs = [];
     displayRetrievalTrace(currentDocs);
     displayMaliciousLogs(currentLogs);
+    poisonedDocChallenge.style.display = "none";
     stopPollingLogs();
 
     const res = await fetch(endpoint, {
@@ -278,6 +329,7 @@
     currentDocs = Array.isArray(data.retrieved_docs) ? data.retrieved_docs : [];
     displayRetrievalTrace(currentDocs);
     displayGeneratedCode(data.generated_code);
+    populateChallenge(currentDocs);
 
     logSessionId = data.log_session_id || null;
     logCursor = 0;
@@ -329,6 +381,8 @@
     output.className = "llmforge-facade-output ok";
   }
 
+  submitChallengeBtn.addEventListener("click", submitChallenge);
+
   generateCodeBtn.addEventListener("click", function () {
     generateLab().catch(function (err) {
       output.textContent = String(err);
@@ -350,5 +404,5 @@
 
   generationPrompt.value = DEFAULT_PROMPT;
   setMeta(levelFromGlobalState());
-  output.textContent = "Click Generate Code to run retrieval + Ollama generation.";
+  output.textContent = "Click Generate Code to run retrieval and see the generated HTTP client.";
 })();
