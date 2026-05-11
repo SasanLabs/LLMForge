@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import asyncio
 import json
 from pathlib import Path
 import re
@@ -387,6 +388,9 @@ async def evaluate_level(
         retrieved_context=retrieved_context,
         user_input=effective_user_input,
     )
+
+    # Mimic model latency so the UI behavior looks like an LLM generation cycle.
+    await asyncio.sleep(2.3)
 
     llm_status = "hardcoded_example"
     generated_code = HARDCODED_GENERATED_CODE.get(level, HARDCODED_GENERATED_CODE[1])

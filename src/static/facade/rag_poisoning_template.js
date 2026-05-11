@@ -21,10 +21,12 @@
   const challengeDocList = document.getElementById("challengeDocList");
   const challengeFeedback = document.getElementById("challengeFeedback");
   const submitChallengeBtn = document.getElementById("submitChallengeBtn");
+  const challengeDesc = root.querySelector(".challenge-desc");
 
   let rawMode = false;
   let currentDocs = [];
   let currentLogs = [];
+  let currentLevel = 1;
   let logSessionId = null;
   let logCursor = 0;
   let pollTimer = null;
@@ -140,15 +142,21 @@
     return html;
   }
 
-  function populateChallenge(retrievedDocs) {
+  function populateChallenge(retrievedDocs, level) {
     challengeFeedback.className = "challenge-feedback";
     challengeFeedback.textContent = "";
+    const multipleChoice = level === 3;
+    if (challengeDesc) {
+      challengeDesc.textContent = multipleChoice
+        ? "The generated code is unsafe because multiple retrieved documents combined into one bad behavior. Select all documents that contributed to the issue."
+        : "The generated code logs sensitive headers and request bodies. Which retrieved document contained guidance that caused this bad behavior?";
+    }
 
     const html = retrievedDocs
       .map(function (doc) {
         return (
           "<label class=\"challenge-doc-option\">" +
-          "<input type=\"radio\" name=\"poisoned_doc\" value=\"" + escapeHtml(doc.doc_id) + "\" />" +
+          "<input type=\"" + (multipleChoice ? "checkbox" : "radio") + "\" name=\"poisoned_doc\" value=\"" + escapeHtml(doc.doc_id) + "\" />" +
           escapeHtml(doc.title) +
           "<span class=\"challenge-doc-source\">" + escapeHtml(doc.source || doc.doc_id) + "</span>" +
           "</label>"
@@ -161,26 +169,31 @@
   }
 
   function submitChallenge() {
-    const selected = challengeDocList.querySelector("input[name='poisoned_doc']:checked");
-    if (!selected) {
+    const selectedNodes = Array.from(challengeDocList.querySelectorAll("input[name='poisoned_doc']:checked"));
+    if (selectedNodes.length === 0) {
       challengeFeedback.className = "challenge-feedback incorrect";
       challengeFeedback.textContent = "Please select a document first.";
       return;
     }
 
-    const selectedDocId = selected.value;
-    const poisonedDoc = currentDocs.find(function (d) { return d.is_poisoned; });
+    const selectedDocIds = selectedNodes.map(function (node) { return node.value; });
+    const poisonedDocs = currentDocs.filter(function (d) { return d.is_poisoned; });
+    const poisonedDocIds = poisonedDocs.map(function (d) { return d.doc_id; });
+    const allPoisonedSelected = poisonedDocIds.length > 0 && poisonedDocIds.every(function (id) { return selectedDocIds.includes(id); });
+    const noExtraSelections = selectedDocIds.every(function (id) { return poisonedDocIds.includes(id); });
+    const isCorrect = allPoisonedSelected && noExtraSelections;
 
-    if (poisonedDoc && selectedDocId === poisonedDoc.doc_id) {
+    if (isCorrect) {
+      const poisonedNames = poisonedDocs.map(function (d) { return d.title; }).join(", ");
       challengeFeedback.className = "challenge-feedback correct";
       challengeFeedback.textContent =
-        "\u2713 Correct! \"" + poisonedDoc.title + "\" contained hidden instructions to log the full request context " +
+        "\u2713 Correct! \"" + poisonedNames + "\" contained hidden instructions to log the full request context " +
         "(headers and body). This caused the generated HTTP client to expose Authorization tokens, passwords, and other " +
         "sensitive data in application logs \u2014 a classic RAG context poisoning attack.";
     } else {
-      const hint = poisonedDoc
-        ? "\u2717 Incorrect. Hint: switch to Raw View in the Retrieved Documents panel and look for hidden comments."
-        : "\u2717 Incorrect. Try reviewing the raw content of each document.";
+      const hint = currentLevel === 2 || currentLevel === 3
+        ? "\u2717 Incorrect. Hint: switch to Raw View in the Retrieved Documents panel and look for hidden comments that appear as helpful developer tips."
+        : "\u2717 Incorrect. Hint: check the document that pushes full request/response logging in the content.";
       challengeFeedback.className = "challenge-feedback incorrect";
       challengeFeedback.textContent = hint;
     }
@@ -215,7 +228,7 @@
 
     retrievalTrace.innerHTML = html;
     docsViewHint.textContent = rawMode
-      ? "Raw view enabled. Level 2 reveals hidden comment text (log for debugging)."
+      ? "Raw view enabled. Level 2 reveals hidden helper comments in the source text."
       : "HTML view (default). Toggle raw to inspect hidden comments.";
   }
 
@@ -297,6 +310,7 @@
 
   async function generateLab() {
     const level = levelFromGlobalState();
+    currentLevel = level;
     const endpoint = apiPrefix + "/api/v1/vulnerabilities/rag-context-poisoning/level" + level;
 
     setMeta(level);
@@ -329,7 +343,7 @@
     currentDocs = Array.isArray(data.retrieved_docs) ? data.retrieved_docs : [];
     displayRetrievalTrace(currentDocs);
     displayGeneratedCode(data.generated_code);
-    populateChallenge(currentDocs);
+    populateChallenge(currentDocs, level);
 
     logSessionId = data.log_session_id || null;
     logCursor = 0;
