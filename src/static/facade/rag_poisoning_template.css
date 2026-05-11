@@ -140,6 +140,28 @@
   flex-shrink: 0;
 }
 
+.panel-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-toggle-btn {
+  border: 1px solid #c8d1dc;
+  background: #ffffff;
+  color: #0f5bb7;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.panel-toggle-btn:hover {
+  background: #eef5ff;
+}
+
 .panel-header h3 {
   margin: 0 0 4px;
   font-size: 16px;
@@ -161,6 +183,11 @@
   font-family: Consolas, "Courier New", monospace;
   font-size: 13px;
   line-height: 1.55;
+}
+
+.rag-panel.is-collapsed .panel-content,
+.rag-panel.is-collapsed .docs-controls {
+  display: none;
 }
 
 .code-content {

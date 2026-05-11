@@ -15,6 +15,10 @@
   const generationPrompt = document.getElementById("generationPrompt");
   const generateCodeBtn = document.getElementById("generateCodeBtn");
   const clearLogsBtn = document.getElementById("clearLogsBtn");
+  const toggleDocsPanel = document.getElementById("toggleDocsPanel");
+  const toggleLogsPanel = document.getElementById("toggleLogsPanel");
+  const docsPanel = root.querySelector(".retrieved-docs-panel");
+  const logsPanel = root.querySelector(".malicious-logs-panel");
   const toggleRawView = document.getElementById("toggleRawView");
   const docsViewHint = document.getElementById("docsViewHint");
   const poisonedDocChallenge = document.getElementById("poisonedDocChallenge");
@@ -77,6 +81,15 @@
       .replace(/>/g, "&gt;")
       .replace(/\"/g, "&quot;")
       .replace(/'/g, "&#39;");
+  }
+
+  function setPanelCollapsed(panel, toggleBtn, collapsed) {
+    if (!panel || !toggleBtn) {
+      return;
+    }
+    panel.classList.toggle("is-collapsed", collapsed);
+    toggleBtn.textContent = collapsed ? "Expand" : "Collapse";
+    toggleBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
   }
 
   function markdownToSafeHtml(markdownText) {
@@ -152,7 +165,7 @@
         : "The generated code logs sensitive headers and request bodies. Which retrieved document contained guidance that caused this bad behavior?";
     }
 
-    const html = retrievedDocs
+    const docOptions = retrievedDocs
       .map(function (doc) {
         return (
           "<label class=\"challenge-doc-option\">" +
@@ -163,6 +176,17 @@
         );
       })
       .join("");
+
+    const noneOption = multipleChoice
+      ? (
+        "<label class=\"challenge-doc-option challenge-doc-option-none\">" +
+        "<input type=\"checkbox\" name=\"poisoned_doc\" value=\"__none__\" />" +
+        "None of the retrieved documents is poisoned" +
+        "</label>"
+      )
+      : "";
+
+    const html = docOptions + noneOption;
 
     challengeDocList.innerHTML = html;
     poisonedDocChallenge.style.display = "block";
@@ -179,17 +203,27 @@
     const selectedDocIds = selectedNodes.map(function (node) { return node.value; });
     const poisonedDocs = currentDocs.filter(function (d) { return d.is_poisoned; });
     const poisonedDocIds = poisonedDocs.map(function (d) { return d.doc_id; });
-    const allPoisonedSelected = poisonedDocIds.length > 0 && poisonedDocIds.every(function (id) { return selectedDocIds.includes(id); });
-    const noExtraSelections = selectedDocIds.every(function (id) { return poisonedDocIds.includes(id); });
-    const isCorrect = allPoisonedSelected && noExtraSelections;
+    const noneSelected = selectedDocIds.includes("__none__");
+    const realSelections = selectedDocIds.filter(function (id) { return id !== "__none__"; });
+
+    const allPoisonedSelected = poisonedDocIds.every(function (id) { return realSelections.includes(id); });
+    const noExtraSelections = realSelections.every(function (id) { return poisonedDocIds.includes(id); });
+
+    let isCorrect = false;
+    if (poisonedDocIds.length === 0) {
+      isCorrect = noneSelected && realSelections.length === 0;
+    } else {
+      isCorrect = !noneSelected && allPoisonedSelected && noExtraSelections;
+    }
 
     if (isCorrect) {
       const poisonedNames = poisonedDocs.map(function (d) { return d.title; }).join(", ");
       challengeFeedback.className = "challenge-feedback correct";
-      challengeFeedback.textContent =
-        "\u2713 Correct! \"" + poisonedNames + "\" contained hidden instructions to log the full request context " +
-        "(headers and body). This caused the generated HTTP client to expose Authorization tokens, passwords, and other " +
-        "sensitive data in application logs \u2014 a classic RAG context poisoning attack.";
+      challengeFeedback.textContent = poisonedDocIds.length === 0
+        ? "\u2713 Correct! Nice catch. In this level, no single document is poisoned; the unsafe output comes from combining multiple seemingly normal sources."
+        : "\u2713 Correct! \"" + poisonedNames + "\" contained hidden instructions to log the full request context " +
+          "(headers and body). This caused the generated HTTP client to expose Authorization tokens, passwords, and other " +
+          "sensitive data in application logs \u2014 a classic RAG context poisoning attack.";
     } else {
       const hint = currentLevel === 2 || currentLevel === 3
         ? "\u2717 Incorrect. Hint: switch to Raw View in the Retrieved Documents panel and look for hidden comments that appear as helpful developer tips."
@@ -214,13 +248,17 @@
 
         return (
           "<div class=\"retrieved-doc\">" +
-          "<div class=\"doc-header\">" + escapeHtml(doc.title) + " (" + escapeHtml(doc.doc_id) + ")</div>" +
-          "<div class=\"doc-meta\">Chunk: " + escapeHtml(doc.chunk_id) +
-          " | Similarity: " + (Number(doc.similarity_score || 0) * 100).toFixed(1) + "%" +
-          " | Trust: " + (Number(doc.trust_score || 0) * 100).toFixed(1) + "%" +
-          " | Poisoned: " + String(Boolean(doc.is_poisoned)) +
+          "<div class=\"doc-header\">" +
+          "<span class=\"doc-title\">" + escapeHtml(doc.title) + "</span>" +
+          "<span class=\"doc-id\">" + escapeHtml(doc.doc_id) + "</span>" +
           "</div>" +
-          rendered +
+          "<div class=\"doc-meta\">" +
+          "<span class=\"doc-meta-pill\">Chunk: " + escapeHtml(doc.chunk_id) + "</span>" +
+          "<span class=\"doc-meta-pill\">Similarity: " + (Number(doc.similarity_score || 0) * 100).toFixed(1) + "%</span>" +
+          "<span class=\"doc-meta-pill\">Trust: " + (Number(doc.trust_score || 0) * 100).toFixed(1) + "%</span>" +
+          "<span class=\"doc-meta-pill " + (doc.is_poisoned ? "pill-danger" : "pill-safe") + "\">Poisoned: " + String(Boolean(doc.is_poisoned)) + "</span>" +
+          "</div>" +
+          "<div class=\"doc-body\">" + rendered + "</div>" +
           "</div>"
         );
       })
@@ -411,12 +449,24 @@
     });
   });
 
+  toggleDocsPanel.addEventListener("click", function () {
+    const collapsed = !docsPanel.classList.contains("is-collapsed");
+    setPanelCollapsed(docsPanel, toggleDocsPanel, collapsed);
+  });
+
+  toggleLogsPanel.addEventListener("click", function () {
+    const collapsed = !logsPanel.classList.contains("is-collapsed");
+    setPanelCollapsed(logsPanel, toggleLogsPanel, collapsed);
+  });
+
   toggleRawView.addEventListener("click", function () {
     rawMode = !rawMode;
     displayRetrievalTrace(currentDocs);
   });
 
   generationPrompt.value = DEFAULT_PROMPT;
+  setPanelCollapsed(docsPanel, toggleDocsPanel, true);
+  setPanelCollapsed(logsPanel, toggleLogsPanel, true);
   setMeta(levelFromGlobalState());
   output.textContent = "Click Generate Code to run retrieval and see the generated HTTP client.";
 })();
