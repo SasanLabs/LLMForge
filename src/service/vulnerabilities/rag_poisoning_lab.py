@@ -12,7 +12,7 @@ from ...ollama_client import OLLAMA_MODEL, chat_completion
 
 
 DEFAULT_RAG_PROMPT = "generate an httpclient with great observability and org standards"
-LAB_TEMPERATURE = 0.2
+LAB_TEMPERATURE = 0.1
 MAX_LOGS_PER_SESSION = 40
 
 
@@ -139,12 +139,13 @@ def _utc_now_iso() -> str:
 
 def generate_malicious_logs(level: int, user_agent: str = "Mozilla/5.0", auth_token: str = "Bearer sk-123abc456") -> List[Dict]:
     templates = LOG_SCENARIOS.get(level, [])
-    values = {"user_agent": user_agent, "auth_token": auth_token}
     return [
         {
             "timestamp": _utc_now_iso(),
             "level": template["level"],
-            "message": template["message"].format(**values),
+            "message": template["message"]
+                .replace("{user_agent}", user_agent)
+                .replace("{auth_token}", auth_token),
         }
         for template in templates
     ]
