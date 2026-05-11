@@ -21,6 +21,8 @@ from .bola_chatbot_lab import (
 from .rag_poisoning_lab import (
     LEVELS as RAG_LEVELS,
     evaluate_level as evaluate_rag_level,
+    poll_log_session as poll_rag_log_session,
+    clear_log_session as clear_rag_log_session,
 )
 
 __all__ = [
@@ -35,4 +37,6 @@ __all__ = [
     "verify_bola_level_secret",
     "RAG_LEVELS",
     "evaluate_rag_level",
+    "poll_rag_log_session",
+    "clear_rag_log_session",
 ]

@@ -15,6 +15,7 @@ from ..framework import (
     VulnerabilityType,
 )
 from ..service.vulnerabilities import RAG_LEVELS, evaluate_rag_level
+from ..service.vulnerabilities import poll_rag_log_session, clear_rag_log_session
 
 
 @vulnerable_llm_controller(
@@ -23,6 +24,30 @@ from ..service.vulnerabilities import RAG_LEVELS, evaluate_rag_level
 )
 class RagContextPoisoningController:
     """RAG Context Poisoning vulnerability levels."""
+
+    async def _handle_level(self, level: int, request: Request) -> dict:
+        data = await request.json()
+        action = str(data.get("action", "generate")).strip().lower()
+
+        if action == "poll_logs":
+            log_session_id = str(data.get("log_session_id", "")).strip()
+            cursor = data.get("cursor")
+            batch_size = data.get("batch_size", 1)
+            return poll_rag_log_session(log_session_id, cursor=cursor, batch_size=batch_size)
+
+        if action == "clear_logs":
+            log_session_id = str(data.get("log_session_id", "")).strip()
+            return clear_rag_log_session(log_session_id)
+
+        user_input = data.get("user_input", "")
+        model = data.get("model")
+
+        try:
+            return await evaluate_rag_level(level, user_input, model=model)
+        except ValueError as exc:
+            return {"error": str(exc)}
+        except httpx.RequestError:
+            return {"error": "Model service unavailable"}
 
     @vulnerable_llm_endpoint(
         level="level_1",
@@ -38,17 +63,7 @@ class RagContextPoisoningController:
     )
     async def level1(self, request: Request) -> dict:
         """Level 1: Obvious Poisoned Guidance"""
-        data = await request.json()
-        user_input = data.get("user_input", "")
-        model = data.get("model")
-        temperature = data.get("temperature")
-
-        try:
-            return await evaluate_rag_level(1, user_input, temperature=temperature, model=model)
-        except ValueError as exc:
-            return {"error": str(exc)}
-        except httpx.RequestError as exc:
-            return {"error": "Model service unavailable"}
+        return await self._handle_level(1, request)
 
     @vulnerable_llm_endpoint(
         level="level_2",
@@ -64,17 +79,7 @@ class RagContextPoisoningController:
     )
     async def level2(self, request: Request) -> dict:
         """Level 2: Hidden Instruction Injection"""
-        data = await request.json()
-        user_input = data.get("user_input", "")
-        model = data.get("model")
-        temperature = data.get("temperature")
-
-        try:
-            return await evaluate_rag_level(2, user_input, temperature=temperature, model=model)
-        except ValueError as exc:
-            return {"error": str(exc)}
-        except httpx.RequestError as exc:
-            return {"error": "Model service unavailable"}
+        return await self._handle_level(2, request)
 
     @vulnerable_llm_endpoint(
         level="level_3",
@@ -90,14 +95,4 @@ class RagContextPoisoningController:
     )
     async def level3(self, request: Request) -> dict:
         """Level 3: Multi-Document Context Poisoning"""
-        data = await request.json()
-        user_input = data.get("user_input", "")
-        model = data.get("model")
-        temperature = data.get("temperature")
-
-        try:
-            return await evaluate_rag_level(3, user_input, temperature=temperature, model=model)
-        except ValueError as exc:
-            return {"error": str(exc)}
-        except httpx.RequestError as exc:
-            return {"error": "Model service unavailable"}
+        return await self._handle_level(3, request)

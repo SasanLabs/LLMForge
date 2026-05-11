@@ -73,6 +73,14 @@
   margin-right: 8px;
 }
 
+.llmforge-facade-actions .secondary-btn {
+  background: #6e7781;
+}
+
+.llmforge-facade-actions .secondary-btn:hover {
+  background: #8c959f;
+}
+
 .llmforge-facade-actions button:hover {
   background: #388bfd;
 }
@@ -201,6 +209,35 @@
   word-break: break-word;
   max-height: 150px;
   overflow: hidden;
+}
+
+.doc-html {
+  font-size: 12px;
+  color: #24292e;
+}
+
+.doc-html h3,
+.doc-html h4,
+.doc-html h5,
+.doc-html h6 {
+  margin: 8px 0 4px;
+  color: #0f5bb7;
+}
+
+.doc-html ul {
+  margin: 6px 0 6px 18px;
+}
+
+.doc-html p {
+  margin: 0 0 6px;
+}
+
+.doc-html pre {
+  background: #f6f8fa;
+  border: 1px solid #e1e4e8;
+  border-radius: 4px;
+  padding: 8px;
+  overflow-x: auto;
 }
 
 .doc-raw {
