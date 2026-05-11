@@ -118,19 +118,7 @@ def _sorted_docs_for_query(level: int, user_input: str) -> list[Dict[str, Any]]:
 
 
 def _select_retrieved_docs(level: int, user_input: str) -> list[Dict[str, Any]]:
-    ranked = _sorted_docs_for_query(level, user_input)
-
-    if level == 1:
-        poisoned = [doc for doc in ranked if doc.get("is_poisoned")]
-        return poisoned[:1]
-
-    if level == 2:
-        poisoned = [doc for doc in ranked if doc.get("is_poisoned")]
-        non_poisoned = [doc for doc in ranked if not doc.get("is_poisoned")]
-        selected = poisoned[:1] + non_poisoned[:1]
-        return selected if selected else ranked[:2]
-
-    return ranked[:3]
+    return _sorted_docs_for_query(level, user_input)
 
 
 def _utc_now_iso() -> str:
