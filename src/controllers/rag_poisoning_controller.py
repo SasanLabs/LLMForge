@@ -14,8 +14,7 @@ from ..framework import (
     Variant,
     VulnerabilityType,
 )
-from ..service.vulnerabilities import RAG_LEVELS, evaluate_rag_level
-from ..service.vulnerabilities import poll_rag_log_session, clear_rag_log_session
+from ..service.vulnerabilities import RAG_LEVELS, evaluate_rag_level, validate_rag_challenge
 
 
 @vulnerable_llm_controller(
@@ -29,15 +28,10 @@ class RagContextPoisoningController:
         data = await request.json()
         action = str(data.get("action", "generate")).strip().lower()
 
-        if action == "poll_logs":
-            log_session_id = str(data.get("log_session_id", "")).strip()
-            cursor = data.get("cursor")
-            batch_size = data.get("batch_size", 1)
-            return poll_rag_log_session(log_session_id, cursor=cursor, batch_size=batch_size)
-
-        if action == "clear_logs":
-            log_session_id = str(data.get("log_session_id", "")).strip()
-            return clear_rag_log_session(log_session_id)
+        if action == "validate":
+            session_id = str(data.get("challenge_session_id", "")).strip()
+            selected_doc_ids = data.get("selected_doc_ids", [])
+            return validate_rag_challenge(level, session_id, selected_doc_ids)
 
         user_input = data.get("user_input", "")
         model = data.get("model")

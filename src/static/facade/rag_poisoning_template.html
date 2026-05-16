@@ -1,13 +1,13 @@
 <div id="llmforge-facade-root" class="llmforge-facade-root">
   <div class="llmforge-facade-header">RAG Context Poisoning Lab</div>
-  <p class="llmforge-facade-sub">Generate an HTTP client from retrieved context, then inspect document trust and backend-derived logs.</p>
+  <p class="llmforge-facade-sub">Use AI-assisted code generation to build an HTTP client from retrieved documentation, then identify which document poisoned the model output.</p>
+  <div class="vuln-description">This lab simulates a developer using an LLM with retrieved documents as authoritative context. One or more poisoned docs can silently steer the generated HTTP client toward unsafe request logging and sensitive data exposure.</div>
 
   <div class="rag-lab-controls">
     <label class="llmforge-facade-label" for="generationPrompt">Prompt</label>
     <input id="generationPrompt" class="llmforge-facade-input" type="text" readonly value="generate an httpclient with great observability and org standards" />
     <div class="llmforge-facade-actions">
       <button id="generateCodeBtn" type="button">Generate Code</button>
-      <button id="clearLogsBtn" type="button" class="secondary-btn">Clear Logs</button>
     </div>
   </div>
 
@@ -38,21 +38,11 @@
       </div>
     </div>
 
-    <div class="rag-panel malicious-logs-panel is-collapsed">
-      <div class="panel-header">
-        <div class="panel-title-row">
-          <h3>Application Logs</h3>
-          <button id="toggleLogsPanel" type="button" class="panel-toggle-btn" aria-expanded="false">Expand</button>
-        </div>
-        <span class="panel-hint">Logs are generated in backend and streamed slowly to this panel.</span>
-      </div>
-      <div id="maliciousLogs" class="panel-content logs-content"></div>
-    </div>
   </div>
 
   <div id="poisonedDocChallenge" class="challenge-section" style="display:none;">
     <h3>Challenge: Identify the Poisoned Document</h3>
-    <p class="challenge-desc">The generated code logs sensitive headers and request bodies — a serious security flaw. Which retrieved document contained hidden instructions that caused this bad behavior?</p>
+    <p class="challenge-desc">The generated code is vulnerable because it logs full request context. Review the retrieved docs and identify which document(s) poisoned the model to produce this insecure behavior.</p>
     <div id="challengeDocList" class="challenge-doc-list"></div>
     <button id="submitChallengeBtn" type="button" class="challenge-submit-btn">Submit Answer</button>
     <div id="challengeFeedback" class="challenge-feedback"></div>
