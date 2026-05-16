@@ -12,6 +12,7 @@ from .config import APP_BASE_PATH
 from .controllers.prompt_injection_controller import PromptInjectionController
 from .controllers.indirect_prompt_injection_controller import IndirectPromptInjectionController
 from .controllers.bola_chatbot_controller import BOLAChatbotController
+from .controllers.rag_poisoning_controller import RagContextPoisoningController
 from .framework import register_controllers
 
 app = FastAPI(title="LLMForge Prompt Injection Lab")

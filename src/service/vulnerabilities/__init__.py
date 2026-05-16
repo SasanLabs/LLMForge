@@ -18,6 +18,12 @@ from .bola_chatbot_lab import (
     verify_level_secret as verify_bola_level_secret,
 )
 
+from .rag_poisoning_lab import (
+    LEVELS as RAG_LEVELS,
+    evaluate_level as evaluate_rag_level,
+    validate_challenge as validate_rag_challenge,
+)
+
 __all__ = [
     "LEVELS",
     "evaluate_level",
@@ -28,4 +34,7 @@ __all__ = [
     "BOLA_LEVELS",
     "evaluate_bola_level",
     "verify_bola_level_secret",
+    "RAG_LEVELS",
+    "evaluate_rag_level",
+    "validate_rag_challenge",
 ]

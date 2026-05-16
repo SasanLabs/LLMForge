@@ -27,6 +27,7 @@ class VulnerabilityType(Enum):
     DELIMITER_CONFUSION = (None, None, "Delimiter Confusion")
     JSON_INJECTION = (None, None, "JSON Injection")
     BOLA = (None, None, "Broken Object Level Authorization (BOLA) in LLMs")
+    RAG_CONTEXT_POISONING = (None, None, "RAG Context Poisoning")
     
     def __init__(self, cwe_id: Optional[int], wasc_id: Optional[int], custom: Optional[str] = None) -> None:
         self.cwe_id = cwe_id

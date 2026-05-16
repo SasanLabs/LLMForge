@@ -22,7 +22,14 @@ from ..service.vulnerabilities import LEVELS, evaluate_level
 
 @vulnerable_llm_controller(
     name="prompt_injection",
-    description="Prompt Injection Vulnerability",
+    description=(
+        "<p>Prompt Injection is ranked #1 in the OWASP Top 10 for LLM Applications (2025). It occurs when an attacker crafts malicious input that overrides or hijacks the model's original instructions, causing it to ignore safety guidelines, reveal system prompts, or perform actions outside its intended scope.</p>"
+        "<p>Unlike traditional injection attacks, prompt injection exploits the fundamental design of LLMs — they cannot reliably distinguish between legitimate instructions and adversarial ones embedded in natural language, making it one of the hardest vulnerabilities to fully prevent.</p>"
+        "<p>References:</p><ul>"
+        "<li><a href='https://genai.owasp.org/llmrisk/llm01-prompt-injection/' target='_blank' rel='noopener'>OWASP LLM01:2025 Prompt Injection</a></li>"
+        "<li><a href='https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html' target='_blank' rel='noopener'>OWASP Prompt Injection Prevention Cheat Sheet</a></li>"
+        "</ul>"
+    ),
 )
 class PromptInjectionController:
     """Prompt Injection vulnerability levels."""

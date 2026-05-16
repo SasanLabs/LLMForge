@@ -20,7 +20,14 @@ from ..service.vulnerabilities.bola_chatbot_lab import evaluate_level
 
 @vulnerable_llm_controller(
     name="bola_chatbot",
-    description="LLM Orchestrated BOLA (Broken Object Level Access)",
+    description=(
+        "<p>Broken Object Level Authorization (BOLA) is the #1 vulnerability in the OWASP API Security Top 10. It occurs when an API grants access to objects without verifying the requesting user's ownership or permission.</p>"
+        "<p>In LLM systems this can manifest when access control logic is delegated to the model via prompts — an attacker can manipulate the LLM to retrieve another user's records by asking, bypassing code-enforced checks.</p>"
+        "<p>References:</p><ul>"
+        "<li><a href='https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/' target='_blank' rel='noopener'>OWASP API1:2023 Broken Object Level Authorization</a></li>"
+        "<li><a href='https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/12-API_Testing/02-API_Broken_Object_Level_Authorization' target='_blank' rel='noopener'>OWASP Web Security Testing Guide — API BOLA</a></li>"
+        "</ul>"
+    ),
 )
 class BOLAChatbotController:
     """LLM Orchestrated BOLA vulnerability levels - Medical Chatbot."""
