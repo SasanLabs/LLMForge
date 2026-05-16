@@ -78,25 +78,8 @@ Model backends can be swapped without changing any lab logic.
 Docker Compose is the recommended way to run LLMForge. It starts both the `llmforge` gateway and the `ollama` runtime together.
 
 ```bash
-docker compose up --build -d
+docker compose up --build
 ```
-
-> Running the app image alone is not supported unless you provide a compatible Ollama runtime accessible to the container.
-
-**Verify the gateway is running:**
-
-```bash
-curl http://localhost:8000/health
-```
-
-**Send a prompt:**
-
-```bash
-curl -X POST http://localhost:8000/generate \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "Say hello"}'
-```
-
 ---
 
 ## Choosing a Model
@@ -121,7 +104,6 @@ If `MODEL_PROFILE` is not set, the default is `phi3:mini`.
 
 | Environment Variable  | Purpose                                          | Default           |
 |-----------------------|--------------------------------------------------|-------------------|
-| `MODEL_PROFILE`       | LLM model pulled and used by the gateway         | `phi3:mini`       |
 | `OLLAMA_MODEL`        | Model name forwarded on inference requests       | `phi3:mini`       |
 | `OLLAMA_EMBED_MODEL`  | Embedding model used for vector search           | `nomic-embed-text`|
 
