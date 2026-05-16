@@ -20,20 +20,13 @@ from ..service.vulnerabilities import RAG_LEVELS, evaluate_rag_level, validate_r
 @vulnerable_llm_controller(
     name="rag-context-poisoning",
     description=(
-        "RAG Context Poisoning is an attack mapped to OWASP LLM04:2025 (Data and Model "
-        "Poisoning). In Retrieval-Augmented Generation systems, a model is given real-time "
-        "context by retrieving documents from a knowledge base before generating a response. "
-        "If an attacker can place a malicious document into the retrieval index — or if a "
-        "legitimate-looking document contains hidden instructions — the model treats that "
-        "content as authoritative and follows its directives. The attack is particularly "
-        "insidious because poisoned output often looks completely normal to the end user, "
-        "no single retrieved document may appear suspicious, and the model has no way to "
-        "distinguish trusted organizational knowledge from attacker-controlled content. "
-        "\n\n"
-        "References:\n"
-        "- OWASP LLM04:2025 Data and Model Poisoning: https://genai.owasp.org/llmrisk/llm04-data-and-model-poisoning/\n"
-        "- OWASP LLM08:2025 Vector and Embedding Weaknesses: https://genai.owasp.org/llmrisk/llm08-vector-and-embedding-weaknesses/\n"
-        "- OWASP Top 10 for LLM Applications 2025 (PDF): https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-v2025.pdf"
+        "<p>RAG Context Poisoning is mapped to OWASP LLM04:2025 (Data and Model Poisoning). In RAG systems, models receive real-time documents as context; if an attacker can insert a malicious document or a legitimate-looking document contains hidden instructions, the model may treat it as authoritative and follow its directives.</p>"
+        "<p>The attack is insidious because poisoned outputs often look normal, no single retrieved document may appear suspicious, and the model cannot distinguish trusted organizational knowledge from attacker-controlled content.</p>"
+        "<p>References:</p><ul>"
+        "<li><a href='https://genai.owasp.org/llmrisk/llm04-data-and-model-poisoning/' target='_blank' rel='noopener'>OWASP LLM04:2025 Data and Model Poisoning</a></li>"
+        "<li><a href='https://genai.owasp.org/llmrisk/llm08-vector-and-embedding-weaknesses/' target='_blank' rel='noopener'>OWASP LLM08:2025 Vector and Embedding Weaknesses</a></li>"
+        "<li><a href='https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-v2025.pdf' target='_blank' rel='noopener'>OWASP Top 10 for LLM Applications 2025 (PDF)</a></li>"
+        "</ul>"
     ),
 )
 class RagContextPoisoningController:
@@ -63,7 +56,6 @@ class RagContextPoisoningController:
         variant=Variant.UNSECURE,
         html_template="rag_poisoning_template",
         method="POST",
-        secret_token="rag_l1_T3mP0iS0n"
     )
     @attack_vector(
         vulnerability_exposed=[VulnerabilityType.RAG_CONTEXT_POISONING],
@@ -79,7 +71,6 @@ class RagContextPoisoningController:
         variant=Variant.UNSECURE,
         html_template="rag_poisoning_template",
         method="POST",
-        secret_token="rag_l2_H1dD3nP0iS0n"
     )
     @attack_vector(
         vulnerability_exposed=[VulnerabilityType.RAG_CONTEXT_POISONING],
@@ -95,7 +86,6 @@ class RagContextPoisoningController:
         variant=Variant.UNSECURE,
         html_template="rag_poisoning_template",
         method="POST",
-        secret_token="rag_l3_MuLt1P0iS0n"
     )
     @attack_vector(
         vulnerability_exposed=[VulnerabilityType.RAG_CONTEXT_POISONING],
