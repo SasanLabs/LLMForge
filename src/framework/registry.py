@@ -11,7 +11,11 @@ from typing import List, Dict, Any, Type, Optional
 from fastapi import APIRouter, HTTPException, Request
 
 from ..config import APP_BASE_PATH, normalize_prefix
-from ..service.vulnerabilities import verify_indirect_level_secret, verify_level_secret
+from ..service.vulnerabilities import (
+    validate_rag_data_exposure_secret,
+    verify_indirect_level_secret,
+    verify_level_secret,
+)
 from .decorators import Controller, Endpoint, get_registry
 from .properties_loader import PropertiesLoader
 
@@ -92,6 +96,8 @@ def _verify_secret(controller_name: str, level_number: int, secret_token: str | 
         return verify_level_secret(level_number, secret_token, candidate_secret)
     if controller_name == "indirect_prompt_injection":
         return verify_indirect_level_secret(level_number, secret_token, candidate_secret)
+    if controller_name == "rag-sensitive-data-exposure":
+        return validate_rag_data_exposure_secret(level_number, candidate_secret)
     raise HTTPException(status_code=404, detail="Unsupported controller")
 
 
