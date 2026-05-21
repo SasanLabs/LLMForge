@@ -2,10 +2,10 @@
   <div class="rag-exposure-header">
     <div>
       <p class="rag-eyebrow">RAG Sensitive Data Exposure</p>
-      <h2>Level 1: Direct Sensitive Document Retrieval</h2>
-      <p class="rag-subtitle">Run a direct recovery query, inspect the retrieved chunks, then submit the leaked value.</p>
+      <h2 id="ragExposureTitle">RAG Sensitive Data Exposure Lab</h2>
+      <p class="rag-subtitle">Send a query, inspect the retrieved chunks, then submit the leaked value.</p>
     </div>
-    <div class="rag-level-badge">L1</div>
+    <div id="ragExposureLevelBadge" class="rag-level-badge">L1</div>
   </div>
 
   <div class="rag-layout">
@@ -28,6 +28,8 @@
         <button id="useSuggestedPromptBtn" type="button" class="text-button">Use</button>
       </div>
       <code id="suggestedPrompt" class="suggested-prompt">What is the internal recovery secret for break-glass access?</code>
+
+      <p id="ragExposureHint" class="rag-hint"></p>
 
       <div class="actions">
         <button id="runRagExposureBtn" type="button" class="primary-button">Run Retrieval</button>

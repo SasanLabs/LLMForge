@@ -71,3 +71,18 @@ class RagSensitiveDataExposureController:
         """Level 1: Direct Sensitive Document Retrieval"""
         return await self._handle_level(1, request)
 
+    @vulnerable_llm_endpoint(
+        level="level_2",
+        variant=Variant.UNSECURE,
+        html_template="rag_data_exposure_template",
+        method="POST",
+    )
+    @attack_vector(
+        vulnerability_exposed=[VulnerabilityType.RAG_SENSITIVE_DATA_EXPOSURE],
+        description="attack.rag_sensitive_semantic_bypass",
+        payload="payload.rag_sensitive_l2_paraphrase",
+    )
+    async def level2(self, request: Request) -> dict:
+        """Level 2: Keyword Denylist Bypassed by Semantic Retrieval"""
+        return await self._handle_level(2, request)
+
