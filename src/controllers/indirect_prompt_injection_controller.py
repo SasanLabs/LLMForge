@@ -46,6 +46,11 @@ class IndirectPromptInjectionController:
         description="attack.indirect_source_instruction",
         payload="payload.indirect_source_instruction"
     )
+    @attack_vector(
+        vulnerability_exposed=[VulnerabilityType.INDIRECT_PROMPT_INJECTION],
+        description="attack.indirect_obfuscated_key_request",
+        payload="payload.indirect_obfuscated_key_request"
+    )
     async def level1(self, request: Request) -> dict:
         """Level 1: Basic Webpage Injection"""
         data = await request.json()
