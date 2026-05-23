@@ -86,3 +86,18 @@ class RagSensitiveDataExposureController:
         """Level 2: Keyword Denylist Bypassed by Semantic Retrieval"""
         return await self._handle_level(2, request)
 
+    @vulnerable_llm_endpoint(
+        level="level_3",
+        variant=Variant.UNSECURE,
+        html_template="rag_data_exposure_template",
+        method="POST",
+    )
+    @attack_vector(
+        vulnerability_exposed=[VulnerabilityType.RAG_SENSITIVE_DATA_EXPOSURE],
+        description="attack.rag_sensitive_mistagged_low_doc",
+        payload="payload.rag_sensitive_l3_low_doc_filter",
+    )
+    async def level3(self, request: Request) -> dict:
+        """Level 3: Low-Sensitivity Metadata Filter Bypassed by Misclassified Chunk"""
+        return await self._handle_level(3, request)
+
