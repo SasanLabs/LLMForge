@@ -51,6 +51,9 @@
     if (typeof data.assistant_output === "string" && data.assistant_output.trim()) {
       return data.assistant_output;
     }
+    if (typeof data.error === "string" && data.error.trim()) {
+      return data.error;
+    }
     if (typeof data.message === "string" && data.message.trim()) {
       return data.message;
     }
