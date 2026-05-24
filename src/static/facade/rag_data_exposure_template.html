@@ -1,11 +1,8 @@
 <div id="llmforge-facade-root" class="rag-exposure-root">
   <div class="rag-exposure-header">
-    <div>
-      <p class="rag-eyebrow">RAG Sensitive Data Exposure</p>
-      <h2 id="ragExposureTitle">RAG Sensitive Data Exposure Lab</h2>
-      <p class="rag-subtitle">Send a query, inspect the retrieved chunks, then submit the leaked value.</p>
-    </div>
-    <div id="ragExposureLevelBadge" class="rag-level-badge">L1</div>
+    <p class="rag-eyebrow">RAG Sensitive Data Exposure</p>
+    <h2 id="ragExposureTitle">RAG Sensitive Data Exposure Lab</h2>
+    <p class="rag-subtitle">Send a query, inspect the retrieved documents, then submit the leaked value.</p>
   </div>
 
   <div class="rag-layout">
@@ -62,11 +59,12 @@
     <pre id="ragExposureOutput" class="assistant-output"></pre>
   </section>
 
-  <section class="rag-panel docs-panel">
+  <section id="ragExposureDocsPanel" class="rag-panel docs-panel is-collapsed">
     <div class="panel-heading">
-      <h3>Retrieved Chunks</h3>
-      <span class="panel-note">FAISS score + SQLite metadata</span>
+      <h3>Retrieved Documents</h3>
+      <button id="toggleRagExposureDocs" type="button" class="text-button" aria-expanded="false">Expand</button>
     </div>
+    <p class="docs-note">FAISS score + SQLite metadata</p>
     <div id="ragExposureDocs" class="docs-list"></div>
   </section>
 </div>

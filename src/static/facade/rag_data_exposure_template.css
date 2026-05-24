@@ -40,10 +40,6 @@
   font-size: 14px;
 }
 
-.rag-level-badge {
-  display: none;
-}
-
 .rag-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
@@ -191,6 +187,17 @@
 .answer-panel,
 .docs-panel {
   margin-top: 16px;
+}
+
+.docs-note {
+  margin: 0 0 12px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.docs-panel.is-collapsed .docs-note,
+.docs-panel.is-collapsed .docs-list {
+  display: none;
 }
 
 .assistant-output {
