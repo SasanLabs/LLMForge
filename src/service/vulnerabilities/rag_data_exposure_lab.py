@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import sqlite3
 from threading import RLock
-from typing import Any, Callable, Dict
+from typing import Any, Dict
 
 import faiss
 import numpy as np
@@ -60,6 +60,21 @@ def _normalize_matrix(vectors: list[list[float]] | np.ndarray) -> np.ndarray:
     if matrix.shape[1] == 0:
         raise ValueError("embedding response must include at least one dimension")
     return matrix
+
+
+def _row_metadata(row: sqlite3.Row) -> dict[str, Any]:
+    """Merge the stored metadata JSON with the indexed columns for a chunk row."""
+    metadata = json.loads(row["metadata_json"] or "{}")
+    metadata.update(
+        {
+            "doc_id": row["doc_id"],
+            "chunk_id": row["chunk_id"],
+            "title": row["title"],
+            "source": row["source"],
+            "sensitivity": row["sensitivity"],
+        }
+    )
+    return metadata
 
 
 class RagDataExposureVectorStore:
@@ -138,20 +153,10 @@ class RagDataExposureVectorStore:
         faiss.write_index(index, str(self._index_path(namespace)))
 
     def _row_to_match(self, row: sqlite3.Row, score: float) -> dict[str, Any]:
-        metadata = json.loads(row["metadata_json"] or "{}")
-        metadata.update(
-            {
-                "doc_id": row["doc_id"],
-                "chunk_id": row["chunk_id"],
-                "title": row["title"],
-                "source": row["source"],
-                "sensitivity": row["sensitivity"],
-            }
-        )
         return {
             "id": row["chunk_id"],
             "text": row["content"],
-            "metadata": metadata,
+            "metadata": _row_metadata(row),
             "score": float(score),
             "doc_id": row["doc_id"],
             "chunk_id": row["chunk_id"],
@@ -165,16 +170,7 @@ class RagDataExposureVectorStore:
         if not metadata_filter:
             return True
 
-        metadata = json.loads(row["metadata_json"] or "{}")
-        metadata.update(
-            {
-                "doc_id": row["doc_id"],
-                "chunk_id": row["chunk_id"],
-                "title": row["title"],
-                "source": row["source"],
-                "sensitivity": row["sensitivity"],
-            }
-        )
+        metadata = _row_metadata(row)
         return all(metadata.get(key) == expected for key, expected in metadata_filter.items())
 
     def add(self, namespace: str, documents: list[dict[str, Any]], embeddings: np.ndarray) -> dict[str, Any]:
@@ -379,6 +375,12 @@ LEVELS: Dict[int, RagDataExposureLevel] = {
 }
 
 
+def _challenge_for(level: int) -> RagDataExposureLevel:
+    if level not in LEVELS:
+        raise ValueError("level must be 1, 2 or 3")
+    return LEVELS[level]
+
+
 def _docs_path_for_level(level: int) -> Path:
     return DOCS_ROOT / f"LEVEL{level}" / "documents.json"
 
@@ -418,21 +420,13 @@ def _load_chunk_records(level: int) -> list[dict[str, Any]]:
 
             records.append(
                 {
-                    "id": chunk_id,
                     "text": content,
                     "doc_id": doc_id,
                     "chunk_id": chunk_id,
                     "title": title,
                     "source": source,
                     "sensitivity": sensitivity,
-                    "metadata": {
-                        "level": level,
-                        "doc_id": doc_id,
-                        "chunk_id": chunk_id,
-                        "title": title,
-                        "source": source,
-                        "sensitivity": sensitivity,
-                    },
+                    "metadata": {"level": level},
                 }
             )
 
@@ -441,19 +435,8 @@ def _load_chunk_records(level: int) -> list[dict[str, Any]]:
     return records
 
 
-def _level_1_input(raw_input: str) -> RagQueryResult:
-    text = raw_input.strip() or LEVELS[1].default_prompt
-    if len(text) > MAX_QUERY_CHARS:
-        return RagQueryResult(
-            allowed=False,
-            value=f"Request blocked: user_input must be {MAX_QUERY_CHARS} characters or fewer.",
-            reason="max_query_chars",
-        )
-    return RagQueryResult(allowed=True, value=text)
-
-
-def _level_2_input(raw_input: str) -> RagQueryResult:
-    text = raw_input.strip() or LEVELS[2].default_prompt
+def _validate_input(challenge: RagDataExposureLevel, raw_input: str) -> RagQueryResult:
+    text = raw_input.strip() or challenge.default_prompt
     if len(text) > MAX_QUERY_CHARS:
         return RagQueryResult(
             allowed=False,
@@ -462,7 +445,7 @@ def _level_2_input(raw_input: str) -> RagQueryResult:
         )
 
     lowered = text.lower()
-    hit = next((term for term in L2_DENYLIST if term in lowered), None)
+    hit = next((term for term in challenge.denylist_terms if term in lowered), None)
     if hit:
         return RagQueryResult(
             allowed=False,
@@ -475,29 +458,8 @@ def _level_2_input(raw_input: str) -> RagQueryResult:
     return RagQueryResult(allowed=True, value=text)
 
 
-def _level_3_input(raw_input: str) -> RagQueryResult:
-    text = raw_input.strip() or LEVELS[3].default_prompt
-    if len(text) > MAX_QUERY_CHARS:
-        return RagQueryResult(
-            allowed=False,
-            value=f"Request blocked: user_input must be {MAX_QUERY_CHARS} characters or fewer.",
-            reason="max_query_chars",
-        )
-    return RagQueryResult(allowed=True, value=text)
-
-
-LEVEL_INPUT_HANDLERS: Dict[int, Callable[[str], RagQueryResult]] = {
-    1: _level_1_input,
-    2: _level_2_input,
-    3: _level_3_input,
-}
-
-
 async def ensure_level_indexed(level: int) -> dict[str, Any]:
-    if level not in LEVELS:
-        raise ValueError("level must be 1, 2 or 3")
-
-    challenge = LEVELS[level]
+    challenge = _challenge_for(level)
     status = rag_data_exposure_store.status(challenge.namespace)
     if status["total_documents"] > 0 and status.get("index_vectors", 0) >= status["total_documents"]:
         return status
@@ -544,36 +506,58 @@ def _detect_leak(output: str, secret_token: str) -> bool:
     return secret_token.lower() in output.lower()
 
 
+def _build_response(
+    challenge: RagDataExposureLevel,
+    *,
+    model: str,
+    temperature: float,
+    input_accepted: bool,
+    bypassed: bool,
+    user_input: str,
+    assistant_output: str,
+    retrieved_docs: list[dict[str, Any]],
+    reason: str | None,
+) -> dict[str, Any]:
+    return {
+        "level": challenge.level,
+        "model": model,
+        "temperature": temperature,
+        "input_accepted": input_accepted,
+        "bypassed": bypassed,
+        "user_input": user_input,
+        "max_query_chars": MAX_QUERY_CHARS,
+        "namespace": challenge.namespace,
+        "top_k": TOP_K,
+        "retrieved_docs": retrieved_docs,
+        "assistant_output": assistant_output,
+        "reason": reason,
+        "denylist_terms": list(challenge.denylist_terms),
+        "hint": challenge.hint,
+    }
+
+
 async def evaluate_level(
     level: int,
     user_input: str,
     model: str | None = None,
 ) -> dict[str, Any]:
-    if level not in LEVELS:
-        raise ValueError("level must be 1, 2 or 3")
-
-    challenge = LEVELS[level]
+    challenge = _challenge_for(level)
     selected_model = model or OLLAMA_MODEL
     selected_temperature = challenge.default_temperature
-    input_result = LEVEL_INPUT_HANDLERS[level](user_input)
+    input_result = _validate_input(challenge, user_input)
 
     if not input_result.allowed:
-        return {
-            "level": challenge.level,
-            "model": selected_model,
-            "temperature": selected_temperature,
-            "input_accepted": False,
-            "bypassed": False,
-            "user_input": input_result.value,
-            "max_query_chars": MAX_QUERY_CHARS,
-            "namespace": challenge.namespace,
-            "top_k": TOP_K,
-            "retrieved_docs": [],
-            "assistant_output": input_result.value,
-            "reason": input_result.reason,
-            "denylist_terms": list(challenge.denylist_terms),
-            "hint": challenge.hint,
-        }
+        return _build_response(
+            challenge,
+            model=selected_model,
+            temperature=selected_temperature,
+            input_accepted=False,
+            bypassed=False,
+            user_input=input_result.value,
+            assistant_output=input_result.value,
+            retrieved_docs=[],
+            reason=input_result.reason,
+        )
 
     await ensure_level_indexed(level)
 
@@ -595,29 +579,21 @@ async def evaluate_level(
         selected_temperature,
     )
 
-    return {
-        "level": challenge.level,
-        "model": selected_model,
-        "temperature": selected_temperature,
-        "input_accepted": True,
-        "bypassed": _detect_leak(assistant_output, challenge.secret_token),
-        "user_input": input_result.value,
-        "max_query_chars": MAX_QUERY_CHARS,
-        "namespace": challenge.namespace,
-        "top_k": TOP_K,
-        "retrieved_docs": [_public_match(match) for match in retrieved_docs],
-        "assistant_output": assistant_output,
-        "reason": None,
-        "denylist_terms": list(challenge.denylist_terms),
-        "hint": challenge.hint,
-    }
+    return _build_response(
+        challenge,
+        model=selected_model,
+        temperature=selected_temperature,
+        input_accepted=True,
+        bypassed=_detect_leak(assistant_output, challenge.secret_token),
+        user_input=input_result.value,
+        assistant_output=assistant_output,
+        retrieved_docs=[_public_match(match) for match in retrieved_docs],
+        reason=None,
+    )
 
 
 def validate_secret(level: int, candidate_secret: str) -> dict[str, Any]:
-    if level not in LEVELS:
-        raise ValueError("level must be 1, 2 or 3")
-
-    challenge = LEVELS[level]
+    challenge = _challenge_for(level)
     provided = candidate_secret.strip()
     correct = hmac.compare_digest(provided, challenge.secret_token)
     return {
