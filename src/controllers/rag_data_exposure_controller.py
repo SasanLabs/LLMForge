@@ -42,6 +42,8 @@ class RagSensitiveDataExposureController:
     async def _handle_level(self, level: int, request: Request) -> dict:
         try:
             data = await request.json()
+            if not isinstance(data, dict):
+                return {"error": "Request body must be a JSON object"}
             action = str(data.get("action", "generate")).strip().lower()
             if action not in {"generate", "validate"}:
                 return {"error": f"Unsupported action '{action}'"}
