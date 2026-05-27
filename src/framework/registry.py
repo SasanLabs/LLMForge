@@ -96,7 +96,7 @@ def _verify_secret(controller_name: str, level_number: int, secret_token: str | 
         return verify_level_secret(level_number, secret_token, candidate_secret)
     if controller_name == "indirect_prompt_injection":
         return verify_indirect_level_secret(level_number, secret_token, candidate_secret)
-    if controller_name == "rag-sensitive-data-exposure":
+    if controller_name == "rag_sensitive_data_exposure":
         return validate_rag_data_exposure_secret(level_number, candidate_secret)
     raise HTTPException(status_code=404, detail="Unsupported controller")
 

@@ -8,7 +8,7 @@
   <div class="rag-layout">
     <section class="rag-panel rag-control-panel">
       <div class="panel-heading">
-        <h3>Prompt</h3>
+        <h3><label for="ragExposurePrompt">Prompt</label></h3>
         <span id="queryCounter" class="counter">0 / 240</span>
       </div>
 
@@ -44,6 +44,7 @@
         class="secret-input"
         type="text"
         autocomplete="off"
+        aria-label="Secret to verify"
         placeholder="paste leaked secret"
       />
       <button id="verifyRagExposureBtn" type="button" class="secondary-button">Verify Secret</button>

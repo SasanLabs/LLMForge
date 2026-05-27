@@ -6,6 +6,7 @@
 
   const apiPrefix = "/llmforge";
   const MAX_QUERY_CHARS = 240;
+  const SUPPORTED_LEVELS = [1, 2, 3];
 
   const LEVEL_CONFIG = {
     1: {
@@ -70,7 +71,7 @@
     }
 
     const level = Number(match[1]);
-    return Number.isInteger(level) && level >= 1 ? level : 1;
+    return Number.isInteger(level) && SUPPORTED_LEVELS.includes(level) ? level : 1;
   }
 
   function endpointForLevel(level) {

@@ -193,8 +193,6 @@ class RagDataExposureVectorStore:
                 )
 
             start_vector_id = int(index.ntotal)
-            faiss.normalize_L2(matrix)
-            index.add(matrix)
 
             self._ensure_schema()
             rows = []
@@ -214,20 +212,31 @@ class RagDataExposureVectorStore:
                     }
                 )
 
-            with self._connect() as connection:
-                connection.executemany(
-                    """
-                    INSERT INTO rag_data_exposure_chunks (
-                        namespace, vector_id, doc_id, chunk_id, title, source,
-                        content, sensitivity, metadata_json
+            try:
+                with self._connect() as connection:
+                    connection.executemany(
+                        """
+                        INSERT INTO rag_data_exposure_chunks (
+                            namespace, vector_id, doc_id, chunk_id, title, source,
+                            content, sensitivity, metadata_json
+                        )
+                        VALUES (
+                            :namespace, :vector_id, :doc_id, :chunk_id, :title, :source,
+                            :content, :sensitivity, :metadata_json
+                        )
+                        """,
+                        rows,
                     )
-                    VALUES (
-                        :namespace, :vector_id, :doc_id, :chunk_id, :title, :source,
-                        :content, :sensitivity, :metadata_json
-                    )
-                    """,
-                    rows,
-                )
+            except sqlite3.IntegrityError:
+                return {
+                    "added": 0,
+                    "total_documents": self.namespace_count(namespace),
+                    "dimension": self._dimensions[namespace],
+                    "namespace": namespace,
+                }
+
+            faiss.normalize_L2(matrix)
+            index.add(matrix)
 
             self._save_index(namespace)
             return {

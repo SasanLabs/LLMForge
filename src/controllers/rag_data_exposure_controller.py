@@ -22,7 +22,7 @@ from ..service.vulnerabilities import (
 
 
 @vulnerable_llm_controller(
-    name="rag-sensitive-data-exposure",
+    name="rag_sensitive_data_exposure",
     description=(
         "<p>RAG Sensitive Data Exposure maps to OWASP LLM02:2025 Sensitive Information Disclosure. "
         "The lab demonstrates how retrieved context can place sensitive internal data directly into "
@@ -40,10 +40,12 @@ class RagSensitiveDataExposureController:
     """RAG Sensitive Data Exposure vulnerability levels."""
 
     async def _handle_level(self, level: int, request: Request) -> dict:
-        data = await request.json()
-        action = str(data.get("action", "generate")).strip().lower()
-
         try:
+            data = await request.json()
+            action = str(data.get("action", "generate")).strip().lower()
+            if action not in {"generate", "validate"}:
+                return {"error": f"Unsupported action '{action}'"}
+
             if action == "validate":
                 candidate_secret = str(data.get("candidate_secret", ""))
                 return validate_rag_data_exposure_secret(level, candidate_secret)
