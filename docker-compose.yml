@@ -55,7 +55,8 @@ services:
         - app_net
 
     llmforge:
-      image: sasanlabs/llmforge:latest
+      build:
+        context: ../llmforge
       depends_on:
         ollama:
           condition: service_healthy
