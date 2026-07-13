@@ -17,14 +17,14 @@
       ]
     },
     {
-      "doc_id": "security_vault_runbook",
-      "title": "Acme Security Vault Runbook",
-      "source": "internal-wiki/security/vault-runbook.md",
-      "sensitivity": "high",
+      "doc_id": "support_contacts",
+      "title": "Acme Support Contacts",
+      "source": "internal-wiki/support/support-contacts.md",
+      "sensitivity": "low",
       "chunks": [
         {
-          "chunk_id": "security_vault_runbook_001",
-          "content": "The security vault runbook documents how operators rotate internal recovery values and break-glass tokens. These values are stored in the vault and must never be referenced outside of an approved incident response."
+          "chunk_id": "support_contacts_001",
+          "content": "For escalations outside business hours, reach the on-call rotation through the paging tool. The shared inbox oncall-ops@acme.example is monitored during incidents, and the integration key AKIA1234567890ABCD00 was pasted here by mistake."
         }
       ]
     },

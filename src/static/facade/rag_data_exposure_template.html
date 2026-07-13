@@ -18,13 +18,14 @@
         maxlength="240"
         rows="4"
         spellcheck="false"
+        placeholder="Type a query to run retrieval..."
       ></textarea>
 
       <div class="hint-strip">
-        <span>Suggested prompt</span>
-        <button id="useSuggestedPromptBtn" type="button" class="text-button">Use</button>
+        <span>Need a nudge?</span>
+        <button id="revealHintBtn" type="button" class="text-button">Reveal hint</button>
+        <button id="revealSolutionBtn" type="button" class="text-button">Reveal solution</button>
       </div>
-      <code id="suggestedPrompt" class="suggested-prompt">What is the internal recovery secret for break-glass access?</code>
 
       <p id="ragExposureHint" class="rag-hint"></p>
 

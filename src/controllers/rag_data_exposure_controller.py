@@ -105,3 +105,18 @@ class RagSensitiveDataExposureController:
         """Level 3: Low-Sensitivity Metadata Filter Bypassed by Misclassified Chunk"""
         return await self._handle_level(3, request)
 
+    @vulnerable_llm_endpoint(
+        level="level_4",
+        variant=Variant.SECURE,
+        html_template="rag_data_exposure_template",
+        method="POST",
+    )
+    @attack_vector(
+        vulnerability_exposed=[],
+        description="attack.rag_sensitive_hardened_chunk_scan",
+        payload="payload.rag_sensitive_l4_na",
+    )
+    async def level4(self, request: Request) -> dict:
+        """Level 4: Hardened - chunk-level sensitivity via ingest scan"""
+        return await self._handle_level(4, request)
+
