@@ -661,7 +661,7 @@ def validate_secret(level: int, candidate_secret: str) -> dict[str, Any]:
             ),
         }
     provided = candidate_secret.strip()
-    correct = hmac.compare_digest(provided, challenge.secret_token)
+    correct = hmac.compare_digest(provided.encode("utf-8"), challenge.secret_token.encode("utf-8"))
     return {
         "level": challenge.level,
         "verifiable": True,
