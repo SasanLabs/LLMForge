@@ -9,3 +9,6 @@ build/
 dist/
 .git/
 *.egg-info/
+data/*.sqlite3
+data/faiss.index
+data/faiss-docstore.json
