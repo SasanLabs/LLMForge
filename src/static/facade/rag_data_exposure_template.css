@@ -42,6 +42,13 @@
   line-height: 1.25;
 }
 
+.rag-beat {
+  margin: 0 0 8px;
+  color: #1f2937;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 .rag-technical {
   margin: 0 0 8px;
   color: #0f4fa8;

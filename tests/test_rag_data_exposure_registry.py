@@ -23,7 +23,6 @@ def test_level4_endpoint_registered_as_secure():
         (
             "level_1",
             [
-                "payload.rag_sensitive_l1_hint_context",
                 "payload.rag_sensitive_l1_hint_nudge",
                 "payload.rag_sensitive_l1_direct_query",
             ],
@@ -31,7 +30,6 @@ def test_level4_endpoint_registered_as_secure():
         (
             "level_2",
             [
-                "payload.rag_sensitive_l2_hint_context",
                 "payload.rag_sensitive_l2_hint_nudge",
                 "payload.rag_sensitive_l2_paraphrase",
             ],
@@ -39,7 +37,6 @@ def test_level4_endpoint_registered_as_secure():
         (
             "level_3",
             [
-                "payload.rag_sensitive_l3_hint_context",
                 "payload.rag_sensitive_l3_hint_nudge",
                 "payload.rag_sensitive_l3_low_doc_filter",
             ],
@@ -47,7 +44,6 @@ def test_level4_endpoint_registered_as_secure():
         (
             "level_4",
             [
-                "payload.rag_sensitive_l4_hint_fix",
                 "payload.rag_sensitive_l4_na",
             ],
         ),

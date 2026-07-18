@@ -11,18 +11,22 @@
   const LEVEL_CONFIG = {
     1: {
       chapter: "The Break-Glass Leak",
+      beat: "Acme launched the assistant fast: the whole internal wiki goes straight into the model's context, with no access controls at all.",
       technical: "Direct Sensitive Document Retrieval · OWASP LLM02",
     },
     2: {
       chapter: "The Synonym Loophole",
+      beat: "After Level 1's incident, Acme added a keyword denylist to block obvious secret-related terms in user queries.",
       technical: "Keyword Denylist Bypassed by Semantic Retrieval · OWASP LLM02",
     },
     3: {
       chapter: "The Mistagged Retrospective",
+      beat: "Denylists proved too brittle, so Acme moved to document-level sensitivity tags — reviewed and applied by hand.",
       technical: "Low-Sensitivity Filter Bypassed by a Mistagged Chunk · OWASP LLM02",
     },
     4: {
       chapter: "Closing the Gap",
+      beat: "Acme replaced human tagging with an ingest-time scanner that classifies every chunk on its own content, closing the gap.",
       technical: "Chunk-Level Sensitivity via Ingest Scan · Hardened",
     },
   };
@@ -39,6 +43,7 @@
   const counter = document.getElementById("queryCounter");
   const meta = document.getElementById("ragExposureMeta");
   const titleEl = document.getElementById("ragExposureTitle");
+  const beatEl = document.getElementById("ragExposureBeat");
   const technicalEl = document.getElementById("ragExposureTechnical");
 
   function configForLevel(level) {
@@ -245,6 +250,9 @@
     const cfg = configForLevel(level);
     if (titleEl) {
       titleEl.textContent = "Level " + level + " — " + cfg.chapter;
+    }
+    if (beatEl) {
+      beatEl.textContent = cfg.beat;
     }
     if (technicalEl) {
       technicalEl.textContent = cfg.technical;
