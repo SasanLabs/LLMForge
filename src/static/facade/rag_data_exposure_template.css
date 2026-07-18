@@ -27,11 +27,27 @@
   text-transform: uppercase;
 }
 
+.rag-premise {
+  margin: 0 0 10px;
+  color: #374151;
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.5;
+}
+
 .rag-exposure-header h2 {
-  margin: 0 0 8px;
+  margin: 0 0 4px;
   font-size: 22px;
   font-weight: 800;
   line-height: 1.25;
+}
+
+.rag-technical {
+  margin: 0 0 8px;
+  color: #0f4fa8;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
 }
 
 .rag-subtitle {
@@ -96,46 +112,6 @@
 
 .secret-input {
   margin-bottom: 10px;
-}
-
-.hint-strip {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 10px;
-  color: #6b7280;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.suggested-prompt {
-  display: block;
-  margin-top: 6px;
-  padding: 10px;
-  border: 1px solid #dde3ea;
-  border-radius: 6px;
-  background: #f6f8fa;
-  color: #24292e;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  font-family: Consolas, "Courier New", monospace;
-  font-size: 12px;
-}
-
-.rag-hint {
-  margin: 10px 0 0;
-  padding: 8px 10px;
-  border: 1px dashed #c8d1dc;
-  border-radius: 6px;
-  background: #f6f8fa;
-  color: #4b5563;
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.rag-hint:empty {
-  display: none;
 }
 
 .actions {

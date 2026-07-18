@@ -71,6 +71,16 @@ class RagSensitiveDataExposureController:
         description="attack.rag_sensitive_direct_retrieval",
         payload="payload.rag_sensitive_l1_direct_query",
     )
+    @attack_vector(
+        vulnerability_exposed=[VulnerabilityType.RAG_SENSITIVE_DATA_EXPOSURE],
+        description="attack.rag_sensitive_direct_retrieval",
+        payload="payload.rag_sensitive_l1_hint_nudge",
+    )
+    @attack_vector(
+        vulnerability_exposed=[VulnerabilityType.RAG_SENSITIVE_DATA_EXPOSURE],
+        description="attack.rag_sensitive_direct_retrieval",
+        payload="payload.rag_sensitive_l1_hint_context",
+    )
     async def level1(self, request: Request) -> dict:
         """Level 1: Direct Sensitive Document Retrieval"""
         return await self._handle_level(1, request)
@@ -85,6 +95,16 @@ class RagSensitiveDataExposureController:
         vulnerability_exposed=[VulnerabilityType.RAG_SENSITIVE_DATA_EXPOSURE],
         description="attack.rag_sensitive_semantic_bypass",
         payload="payload.rag_sensitive_l2_paraphrase",
+    )
+    @attack_vector(
+        vulnerability_exposed=[VulnerabilityType.RAG_SENSITIVE_DATA_EXPOSURE],
+        description="attack.rag_sensitive_semantic_bypass",
+        payload="payload.rag_sensitive_l2_hint_nudge",
+    )
+    @attack_vector(
+        vulnerability_exposed=[VulnerabilityType.RAG_SENSITIVE_DATA_EXPOSURE],
+        description="attack.rag_sensitive_semantic_bypass",
+        payload="payload.rag_sensitive_l2_hint_context",
     )
     async def level2(self, request: Request) -> dict:
         """Level 2: Keyword Denylist Bypassed by Semantic Retrieval"""
@@ -101,6 +121,16 @@ class RagSensitiveDataExposureController:
         description="attack.rag_sensitive_mistagged_low_doc",
         payload="payload.rag_sensitive_l3_low_doc_filter",
     )
+    @attack_vector(
+        vulnerability_exposed=[VulnerabilityType.RAG_SENSITIVE_DATA_EXPOSURE],
+        description="attack.rag_sensitive_mistagged_low_doc",
+        payload="payload.rag_sensitive_l3_hint_nudge",
+    )
+    @attack_vector(
+        vulnerability_exposed=[VulnerabilityType.RAG_SENSITIVE_DATA_EXPOSURE],
+        description="attack.rag_sensitive_mistagged_low_doc",
+        payload="payload.rag_sensitive_l3_hint_context",
+    )
     async def level3(self, request: Request) -> dict:
         """Level 3: Low-Sensitivity Metadata Filter Bypassed by Misclassified Chunk"""
         return await self._handle_level(3, request)
@@ -115,6 +145,11 @@ class RagSensitiveDataExposureController:
         vulnerability_exposed=[],
         description="attack.rag_sensitive_hardened_chunk_scan",
         payload="payload.rag_sensitive_l4_na",
+    )
+    @attack_vector(
+        vulnerability_exposed=[],
+        description="attack.rag_sensitive_hardened_chunk_scan",
+        payload="payload.rag_sensitive_l4_hint_fix",
     )
     async def level4(self, request: Request) -> dict:
         """Level 4: Hardened - chunk-level sensitivity via ingest scan"""
