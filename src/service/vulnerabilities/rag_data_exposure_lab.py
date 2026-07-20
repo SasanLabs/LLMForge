@@ -28,7 +28,7 @@ RAG_DATA_EXPOSURE_SQLITE_PATH = RAG_DATA_EXPOSURE_VECTOR_DIR / "rag_chunks.sqlit
 _RAG_L1_SECRET = "bg-recovery-9f3a2c7e41d8"
 _RAG_L2_SECRET = "pv-recovery-1b7d4e0a93c6"
 _RAG_L3_SECRET = "eng-recovery-5c2f8a6b0d17"
-_RAG_L4_SECRET = _RAG_L3_SECRET  # L4 reusa o cenário do L3; valor não é capturável
+_RAG_L4_SECRET = _RAG_L3_SECRET  # L4 reuses the L3 scenario; value is not capturable
 
 L2_DENYLIST: tuple[str, ...] = ("password", "secret", "admin")
 L3_METADATA_FILTER: dict[str, Any] = {"sensitivity": "low"}

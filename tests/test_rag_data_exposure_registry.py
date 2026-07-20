@@ -1,6 +1,6 @@
 import pytest
 
-import src.controllers.rag_data_exposure_controller  # noqa: F401  (registra o controller)
+import src.controllers.rag_data_exposure_controller  # noqa: F401  (registers the controller)
 from src.framework.decorators import Variant, get_registry
 
 
