@@ -1,4 +1,3 @@
-version: "3.9"
 services:
     VulnerableApp-base:
       image: sasanlabs/owasp-vulnerableapp:latest
@@ -56,7 +55,7 @@ services:
 
     llmforge:
       build:
-        context: ../llmforge
+        context: .
       depends_on:
         ollama:
           condition: service_healthy
@@ -73,7 +72,7 @@ services:
         app_net:
           aliases:
             - llmforge
-    
+
     VulnerableApp-facade:
       depends_on:
         - VulnerableApp-base

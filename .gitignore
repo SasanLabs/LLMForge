@@ -202,6 +202,7 @@ cython_debug/
 # Local vector index data
 data/faiss.index
 data/faiss-docstore.json
+data/rag_data_exposure/
 .cursorignore
 .cursorindexingignore
 

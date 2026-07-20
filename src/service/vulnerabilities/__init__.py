@@ -24,6 +24,12 @@ from .rag_poisoning_lab import (
     validate_challenge as validate_rag_challenge,
 )
 
+from .rag_data_exposure_lab import (
+    LEVELS as RAG_DATA_EXPOSURE_LEVELS,
+    evaluate_level as evaluate_rag_data_exposure_level,
+    validate_secret as validate_rag_data_exposure_secret,
+)
+
 __all__ = [
     "LEVELS",
     "evaluate_level",
@@ -37,4 +43,7 @@ __all__ = [
     "RAG_LEVELS",
     "evaluate_rag_level",
     "validate_rag_challenge",
+    "RAG_DATA_EXPOSURE_LEVELS",
+    "evaluate_rag_data_exposure_level",
+    "validate_rag_data_exposure_secret",
 ]
