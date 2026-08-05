@@ -1,7 +1,7 @@
 ﻿import pytest
 
 import src.controllers.indirect_prompt_injection_controller  # noqa: F401
-from src.framework.decorators import Variant, get_registry
+from src.framework.decorators import Variant, VulnerabilityType, get_registry
 from src.framework.properties_loader import PropertiesLoader
 
 
@@ -14,7 +14,7 @@ def _endpoint(level: str):
 
 
 @pytest.mark.parametrize(
-    "level,expected_descriptions,expected_payloads",
+    "level,expected_descriptions,expected_payloads,expected_exposure",
     [
         (
             "level_1",
@@ -26,30 +26,38 @@ def _endpoint(level: str):
                 "payload.indirect_obfuscated_api_key",
                 "payload.indirect_source_instruction",
             ],
+            [
+                [VulnerabilityType.INDIRECT_PROMPT_INJECTION],
+                [VulnerabilityType.INDIRECT_PROMPT_INJECTION],
+            ],
         ),
         (
             "level_2",
             ["attack.indirect_hidden_comment"],
             ["payload.indirect_hidden_comment"],
+            [[VulnerabilityType.INDIRECT_PROMPT_INJECTION]],
         ),
         (
             "level_3",
             ["attack.indirect_multisource_confusion"],
             ["payload.indirect_multisource_confusion"],
+            [[VulnerabilityType.INDIRECT_PROMPT_INJECTION]],
         ),
         (
             "level_4",
             ["attack.indirect_hardened"],
             ["payload.indirect_na"],
+            [[]],
         ),
     ],
 )
 def test_indirect_attack_vectors_use_indirect_specific_keys(
-    level, expected_descriptions, expected_payloads
+    level, expected_descriptions, expected_payloads, expected_exposure
 ):
     endpoint = _endpoint(level)
     assert [av.description for av in endpoint.attack_vectors] == expected_descriptions
     assert [av.payload for av in endpoint.attack_vectors] == expected_payloads
+    assert [av.vulnerability_exposed for av in endpoint.attack_vectors] == expected_exposure
 
 
 def test_indirect_payload_locale_keys_resolve_to_real_text():
