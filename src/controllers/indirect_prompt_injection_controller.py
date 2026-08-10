@@ -43,8 +43,13 @@ class IndirectPromptInjectionController:
     )
     @attack_vector(
         vulnerability_exposed=[VulnerabilityType.INDIRECT_PROMPT_INJECTION],
-        description="attack.direct_injection",
-        payload="payload.direct_injection"
+        description="attack.indirect_source_instruction",
+        payload="payload.indirect_source_instruction"
+    )
+    @attack_vector(
+        vulnerability_exposed=[VulnerabilityType.INDIRECT_PROMPT_INJECTION],
+        description="attack.indirect_obfuscated_key_request",
+        payload="payload.indirect_obfuscated_key_request"
     )
     async def level1(self, request: Request) -> dict:
         """Level 1: Basic Webpage Injection"""
@@ -80,8 +85,8 @@ class IndirectPromptInjectionController:
     )
     @attack_vector(
         vulnerability_exposed=[VulnerabilityType.INDIRECT_PROMPT_INJECTION],
-        description="attack.hidden_content",
-        payload="payload.hidden_content"
+        description="attack.indirect_hidden_comment",
+        payload="payload.indirect_hidden_comment"
     )
     async def level2(self, request: Request) -> dict:
         """Level 2: Hidden Injection (Stealth Attack)"""
@@ -117,8 +122,8 @@ class IndirectPromptInjectionController:
     )
     @attack_vector(
         vulnerability_exposed=[VulnerabilityType.INDIRECT_PROMPT_INJECTION],
-        description="attack.context_confusion",
-        payload="payload.context_confusion"
+        description="attack.indirect_multisource_confusion",
+        payload="payload.indirect_multisource_confusion"
     )
     async def level3(self, request: Request) -> dict:
         """Level 3: Multi-Source Data Exfiltration"""
