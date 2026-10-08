@@ -14,6 +14,7 @@ from .controllers.indirect_prompt_injection_controller import IndirectPromptInje
 from .controllers.bola_chatbot_controller import BOLAChatbotController
 from .controllers.rag_poisoning_controller import RagContextPoisoningController
 from .controllers.rag_data_exposure_controller import RagSensitiveDataExposureController
+from .controllers.unbounded_consumption_controller import UnboundedConsumptionController
 from .framework import register_controllers
 
 app = FastAPI(title="LLMForge Prompt Injection Lab")

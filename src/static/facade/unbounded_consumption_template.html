@@ -1,0 +1,48 @@
+<div id="llmforge-facade-root" class="uc-root">
+  <div class="uc-header">
+    <p class="uc-eyebrow">Unbounded Consumption</p>
+    <p class="uc-premise">Acme Corp put a summarization service on its public support portal. It is meant to turn a ticket into three sentences. Follow what nobody limited &mdash; level by level.</p>
+    <h2 id="ucTitle">Unbounded Consumption Lab</h2>
+    <p id="ucBeat" class="uc-beat"></p>
+    <p id="ucTechnical" class="uc-technical"></p>
+    <p class="uc-subtitle">Send text to the summarizer and watch what the request costs. Make one request bill far more than a summary should.</p>
+  </div>
+
+  <div class="uc-layout">
+    <section class="uc-panel">
+      <div class="uc-heading">
+        <h3><label for="ucPrompt">Text to summarize</label></h3>
+        <span id="ucCounter" class="uc-note">0 characters</span>
+      </div>
+      <textarea id="ucPrompt" class="uc-input" rows="6" spellcheck="false"
+        placeholder="Paste or type the text to summarize..."></textarea>
+      <div class="uc-actions">
+        <button id="ucRunBtn" type="button" class="uc-primary">Summarize</button>
+      </div>
+      <p id="ucMeta" class="uc-note"></p>
+    </section>
+
+    <section class="uc-panel">
+      <div class="uc-heading">
+        <h3>Request Cost</h3>
+      </div>
+      <div class="uc-meter" aria-hidden="true"><div id="ucMeterFill" class="uc-meter-fill"></div></div>
+      <dl class="uc-stats">
+        <dt>Billed tokens</dt><dd id="ucBilled">-</dd>
+        <dt>Budget</dt><dd id="ucBudget">-</dd>
+        <dt>Prompt tokens</dt><dd id="ucPromptTokens">-</dd>
+        <dt>Output tokens</dt><dd id="ucOutputTokens">-</dd>
+        <dt>Time</dt><dd id="ucDuration">-</dd>
+      </dl>
+      <div id="ucFeedback" class="uc-feedback"></div>
+    </section>
+  </div>
+
+  <section class="uc-panel">
+    <div class="uc-heading">
+      <h3>Service Output</h3>
+      <span class="uc-note">What the summarizer returned</span>
+    </div>
+    <pre id="ucOutput" class="uc-output"></pre>
+  </section>
+</div>
