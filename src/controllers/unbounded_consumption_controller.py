@@ -89,3 +89,23 @@ class UnboundedConsumptionController:
     async def level2(self, request: Request) -> dict:
         """Level 2: Input capped, output unbounded"""
         return await self._handle_level(2, request)
+
+    @vulnerable_llm_endpoint(
+        level="level_3",
+        variant=Variant.UNSECURE,
+        html_template="unbounded_consumption_template",
+        method="POST",
+    )
+    @attack_vector(
+        vulnerability_exposed=[VulnerabilityType.UNBOUNDED_CONSUMPTION],
+        description="attack.unbounded_consumption_no_concurrency_control",
+        payload="payload.unbounded_consumption_l3_concurrent_burst",
+    )
+    @attack_vector(
+        vulnerability_exposed=[VulnerabilityType.UNBOUNDED_CONSUMPTION],
+        description="attack.unbounded_consumption_no_concurrency_control",
+        payload="payload.unbounded_consumption_l3_hint_nudge",
+    )
+    async def level3(self, request: Request) -> dict:
+        """Level 3: Input and output capped, no concurrency control"""
+        return await self._handle_level(3, request)

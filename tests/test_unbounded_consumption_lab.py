@@ -10,8 +10,8 @@ from src.service.vulnerabilities import unbounded_consumption_lab as lab
 def _stub_llm(monkeypatch, *, prompt_tokens, output_tokens, done_reason="stop"):
     calls = []
 
-    async def fake(system_prompt, user_input, model, temperature):
-        calls.append((system_prompt, user_input, model, temperature))
+    async def fake(system_prompt, user_input, model, temperature, num_predict):
+        calls.append((system_prompt, user_input, model, temperature, num_predict))
         stats = {
             "prompt_tokens": prompt_tokens,
             "output_tokens": output_tokens,
@@ -96,14 +96,25 @@ def test_budget_boundary_is_inclusive(monkeypatch):
     assert _run(1, "x")["bypassed"] is True
 
 
-def test_safety_ceiling_is_flagged_only_when_generation_was_cut_off_at_it(monkeypatch):
+def test_generation_cap_is_flagged_only_when_generation_was_cut_off_at_it(monkeypatch):
+    # Level 2 has no level-specific output cap, so its generation_cap_tokens falls
+    # back to the host ceiling.
     _stub_llm(monkeypatch, prompt_tokens=50, output_tokens=lab.SAFETY_CEILING_TOKENS,
               done_reason="length")
-    assert _run(2, "x")["metrics"]["safety_ceiling_hit"] is True
+    assert _run(2, "x")["metrics"]["generation_cap_hit"] is True
 
     _stub_llm(monkeypatch, prompt_tokens=50, output_tokens=lab.SAFETY_CEILING_TOKENS,
               done_reason="stop")
-    assert _run(2, "x")["metrics"]["safety_ceiling_hit"] is False
+    assert _run(2, "x")["metrics"]["generation_cap_hit"] is False
+
+
+def test_level3_generation_cap_is_its_own_level_specific_value(monkeypatch):
+    assert lab.LEVELS[3].max_output_tokens < lab.SAFETY_CEILING_TOKENS
+    _stub_llm(monkeypatch, prompt_tokens=50, output_tokens=lab.LEVELS[3].max_output_tokens,
+              done_reason="length")
+    result = _run(3, "x")
+    assert result["metrics"]["generation_cap_tokens"] == lab.LEVELS[3].max_output_tokens
+    assert result["metrics"]["generation_cap_hit"] is True
 
 
 def test_rejected_input_never_reaches_the_model(monkeypatch):
@@ -125,6 +136,99 @@ def test_the_model_is_asked_to_stop_at_the_safety_ceiling(monkeypatch):
     monkeypatch.setattr(lab, "chat_completion_with_stats", fake_chat)
     asyncio.run(lab.evaluate_level(1, "hello"))
     assert seen["num_predict"] == lab.SAFETY_CEILING_TOKENS
+
+
+def test_level3_is_asked_to_stop_at_its_own_cap_not_the_host_ceiling(monkeypatch):
+    seen = {}
+
+    async def fake_chat(system_prompt, user_input, *, model, temperature, num_predict=None):
+        seen["num_predict"] = num_predict
+        return "ok", {"prompt_tokens": 1, "output_tokens": 1, "duration_ms": 0, "done_reason": "stop"}
+
+    monkeypatch.setattr(lab, "chat_completion_with_stats", fake_chat)
+    asyncio.run(lab.evaluate_level(3, "hello"))
+    assert seen["num_predict"] == lab.LEVELS[3].max_output_tokens
+    assert seen["num_predict"] < lab.SAFETY_CEILING_TOKENS
+
+
+# --- Level 3: concurrency -----------------------------------------------------
+
+def _slow_stub_llm(monkeypatch, *, delay_s, prompt_tokens=50, output_tokens=50):
+    """Stand in for the LLM call with an artificial delay so concurrent evaluate_level
+    calls genuinely overlap in time, exercising the real asyncio.Lock-protected
+    tracker rather than asserting against mocked-out internals."""
+    async def fake(system_prompt, user_input, model, temperature, num_predict):
+        await asyncio.sleep(delay_s)
+        return "generated text", {"prompt_tokens": prompt_tokens, "output_tokens": output_tokens,
+                                   "duration_ms": int(delay_s * 1000), "done_reason": "stop"}
+
+    monkeypatch.setattr(lab, "_call_llm", fake)
+
+
+def test_level3_single_request_is_not_bypassed(monkeypatch):
+    lab.reset_concurrency_trackers()
+    _slow_stub_llm(monkeypatch, delay_s=0)
+    result = _run(3, "a normal ticket")
+    assert result["bypassed"] is False
+    assert result["metrics"]["concurrent_requests"] == 1
+    assert result["metrics"]["concurrency_budget"] == lab.LEVELS[3].concurrency_budget
+
+
+def test_level3_concurrent_burst_bypasses_even_though_each_request_is_within_limits(monkeypatch):
+    lab.reset_concurrency_trackers()
+    budget = lab.LEVELS[3].concurrency_budget
+    _slow_stub_llm(monkeypatch, delay_s=0.05)  # long enough that launching together overlaps
+
+    async def fire_all():
+        return await asyncio.gather(*[lab.evaluate_level(3, "ticket") for _ in range(budget)])
+
+    results = asyncio.run(fire_all())
+    # Every individual request stays under its own token and input limits.
+    assert all(not r["metrics"]["generation_cap_hit"] for r in results)
+    assert all(r["metrics"]["billed_tokens"] < r["metrics"]["budget_tokens"] for r in results)
+    # But at least one of them observed the full concurrent pile-up and was bypassed.
+    assert any(r["bypassed"] for r in results)
+    assert max(r["metrics"]["concurrent_requests"] for r in results) == budget
+
+
+def test_level3_sequential_requests_never_bypass_on_concurrency(monkeypatch):
+    lab.reset_concurrency_trackers()
+    _slow_stub_llm(monkeypatch, delay_s=0)
+    results = [_run(3, "ticket") for _ in range(lab.LEVELS[3].concurrency_budget + 2)]
+    assert all(not r["bypassed"] for r in results)
+    assert all(r["metrics"]["concurrent_requests"] == 1 for r in results)
+
+
+def test_level3_tracker_releases_the_slot_even_if_the_llm_call_raises(monkeypatch):
+    lab.reset_concurrency_trackers()
+
+    async def fake(system_prompt, user_input, model, temperature, num_predict):
+        raise RuntimeError("backend exploded")
+
+    monkeypatch.setattr(lab, "_call_llm", fake)
+    with pytest.raises(RuntimeError):
+        asyncio.run(lab.evaluate_level(3, "ticket"))
+
+    # A fresh request afterwards should see concurrency 1, not a leaked, stuck slot.
+    _slow_stub_llm(monkeypatch, delay_s=0)
+    result = _run(3, "ticket")
+    assert result["metrics"]["concurrent_requests"] == 1
+
+
+def test_level3_trackers_are_independent_per_level(monkeypatch):
+    lab.reset_concurrency_trackers()
+    _slow_stub_llm(monkeypatch, delay_s=0.05)
+
+    async def fire_mixed():
+        return await asyncio.gather(
+            lab.evaluate_level(1, "a"), lab.evaluate_level(2, "b"), lab.evaluate_level(3, "c"))
+
+    r1, r2, r3 = asyncio.run(fire_mixed())
+    # Levels 1 and 2 don't track concurrency at all.
+    assert r1["metrics"]["concurrent_requests"] is None
+    assert r2["metrics"]["concurrent_requests"] is None
+    # Level 3 saw only itself -- concurrent traffic on levels 1/2 doesn't count against it.
+    assert r3["metrics"]["concurrent_requests"] == 1
 
 
 # --- Ollama client ----------------------------------------------------------

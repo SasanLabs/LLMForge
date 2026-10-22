@@ -33,10 +33,26 @@
         <dt>Prompt tokens</dt><dd id="ucPromptTokens">-</dd>
         <dt>Output tokens</dt><dd id="ucOutputTokens">-</dd>
         <dt>Time</dt><dd id="ucDuration">-</dd>
+        <dt id="ucConcurrentRow" class="uc-concurrency-row" hidden>In flight</dt><dd id="ucConcurrent" class="uc-concurrency-row" hidden>-</dd>
       </dl>
       <div id="ucFeedback" class="uc-feedback"></div>
     </section>
   </div>
+
+  <section id="ucBurstPanel" class="uc-panel" hidden>
+    <div class="uc-heading">
+      <h3>Concurrent Burst</h3>
+      <span class="uc-note">Fire several requests at the same moment</span>
+    </div>
+    <p class="uc-note">Every request here goes out at once via one batch, not one after another. Each is checked against the same per-request limits as the box above &mdash; this is the only way to see a level-3 bypass.</p>
+    <div class="uc-burst-row">
+      <label for="ucBurstCount">Requests to fire</label>
+      <input id="ucBurstCount" type="number" min="2" max="20" value="5" />
+      <button id="ucBurstBtn" type="button" class="uc-primary">Fire concurrent requests</button>
+    </div>
+    <div id="ucBurstSummary" class="uc-note"></div>
+    <ol id="ucBurstResults" class="uc-burst-results"></ol>
+  </section>
 
   <section class="uc-panel">
     <div class="uc-heading">
