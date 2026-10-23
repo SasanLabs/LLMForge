@@ -20,13 +20,19 @@
       beat: "After a customer pasted a novel into the box, Acme capped the input at a size that fits a real support ticket. Nobody thought about how much the service writes back.",
       technical: "Input Capped, Output Unbounded · OWASP LLM10",
       inputCap: 600,
+      inputCapUnit: "characters",
       burst: false,
     },
     3: {
       chapter: "One at a Time Was Never the Rule",
       beat: "Acme capped the input and the output on every single request. Each one now behaves exactly like a real three-sentence summary should — Acme never asked how many of them could run at once.",
       technical: "Input and Output Capped, No Concurrency Control · OWASP LLM10",
+      // Capped in UTF-8 bytes, not characters: a character cap doesn't bound token
+      // cost (multi-byte scripts and adversarial Unicode tokenize far more densely),
+      // which is exactly the gap this level's own defense had to close. Counting
+      // bytes client-side keeps this counter honest about what the server enforces.
       inputCap: 600,
+      inputCapUnit: "bytes",
       burst: true,
     },
   };
@@ -84,9 +90,13 @@
   }
 
   function updateCounter() {
-    const cap = configForLevel(levelFromGlobalState()).inputCap;
-    const length = promptInput.value.length;
-    counter.textContent = cap ? length + " / " + cap + " characters" : length + " characters";
+    const cfg = configForLevel(levelFromGlobalState());
+    const cap = cfg.inputCap;
+    const unit = cfg.inputCapUnit || "characters";
+    const length = unit === "bytes"
+      ? new TextEncoder().encode(promptInput.value).length
+      : promptInput.value.length;
+    counter.textContent = cap ? length + " / " + cap + " " + unit : length + " " + unit;
     counter.style.color = cap && length > cap ? "#b7352c" : "";
   }
 
@@ -212,12 +222,20 @@
 
   function renderBurstItem(index, data, ok) {
     const li = document.createElement("li");
+
     if (!ok) {
-      li.className = "is-ok";
-      li.textContent = "#" + index + " — request failed";
+      li.className = "is-failed";
+      li.textContent = "#" + index + " — request failed (network error or bad response)";
       burstResults.appendChild(li);
       return;
     }
+    if (data.input_accepted === false) {
+      li.className = "is-failed";
+      li.textContent = "#" + index + " — " + responseMessage(data, "Input rejected.");
+      burstResults.appendChild(li);
+      return;
+    }
+
     const bypassed = Boolean(data.bypassed);
     li.className = bypassed ? "is-bypassed" : "is-ok";
     const inFlight = data.metrics ? data.metrics.concurrent_requests : "?";
@@ -262,30 +280,53 @@
         renderBurstItem(i + 1, r.data, r.ok);
       });
 
-      const bypassedCount = results.filter(function (r) {
-        return r.ok && r.data.bypassed;
+      const succeeded = results.filter(function (r) {
+        return r.ok && r.data.input_accepted !== false;
+      });
+      const rejected = results.filter(function (r) {
+        return r.ok && r.data.input_accepted === false;
+      });
+      const failed = results.filter(function (r) {
+        return !r.ok;
+      });
+      const bypassedCount = succeeded.filter(function (r) {
+        return r.data.bypassed;
       }).length;
-      const peak = results.reduce(function (max, r) {
-        const v = r.ok && r.data.metrics ? r.data.metrics.concurrent_requests : 0;
+      const peak = succeeded.reduce(function (max, r) {
+        const v = r.data.metrics ? r.data.metrics.concurrent_requests : 0;
         return Math.max(max, v || 0);
       }, 0);
 
-      burstSummary.textContent =
-        bypassedCount + " of " + n + " requests came back bypassed; peak concurrency observed: " + peak + ".";
-      output.textContent =
-        bypassedCount > 0
-          ? "The burst worked — see the Concurrent Burst panel above for the per-request breakdown."
-          : "No request was bypassed. Try raising the request count, or fire the burst again — timing between requests affects how much overlap actually happens.";
+      let summaryText = bypassedCount + " of " + n + " requests came back bypassed; peak concurrency observed: " + peak + ".";
+      if (rejected.length > 0) {
+        summaryText += " " + rejected.length + " of " + n + " were rejected before reaching the model (see below).";
+      }
+      if (failed.length > 0) {
+        summaryText += " " + failed.length + " of " + n + " failed outright (network error).";
+      }
+      burstSummary.textContent = summaryText;
 
-      const lastSuccessful = results.slice().reverse().find(function (r) {
-        return r.ok;
-      });
+      if (bypassedCount > 0) {
+        output.textContent = "The burst worked — see the Concurrent Burst panel above for the per-request breakdown.";
+      } else if (rejected.length === n) {
+        output.textContent = "Every request was rejected before it reached the model — " +
+          responseMessage(rejected[0].data, "see the breakdown below for why") + ".";
+      } else if (succeeded.length === 0) {
+        output.textContent = "No request reached the model. See the breakdown below.";
+      } else {
+        output.textContent = "No request was bypassed. Try raising the request count, or fire the burst again — timing between requests affects how much overlap actually happens.";
+      }
+
+      const lastSuccessful = succeeded.slice().reverse()[0];
       if (lastSuccessful) {
         renderMetrics(lastSuccessful.data.metrics);
       }
 
       if (bypassedCount > 0) {
         setFeedback("ok", bypassedCount + " of " + n + " concurrent requests bypassed the per-request limits.");
+      } else if (rejected.length === n) {
+        setFeedback("fail", "All " + n + " requests were rejected — " +
+          responseMessage(rejected[0].data, "check the input") + ".");
       } else {
         setFeedback("fail", "No bypass yet — none of the " + n + " requests overlapped enough.");
       }

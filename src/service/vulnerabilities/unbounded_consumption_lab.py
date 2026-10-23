@@ -5,7 +5,7 @@ other labs there is no secret to leak: the goal is to make the service cost far 
 than a summary should. Every response reports what it consumed, and a level is
 bypassed when either of two independent things happens:
 
-* a single request bills at least ``COST_BUDGET_TOKENS`` (prompt plus generated
+* a single request bills at least ``cost_budget_tokens`` (prompt plus generated
   tokens) -- the per-request cost vector, or
 * a level that tracks it (``concurrency_budget`` set) sees at least that many requests
   in flight on the endpoint at once -- the pile-up cost vector, which trips even when
@@ -15,16 +15,52 @@ The levels remove controls one at a time:
 
 * Level 1 has no limit on input size or output length.
 * Level 2 caps the input, so the cost has to come from unbounded *output*.
-* Level 3 caps input and output on every request, so neither alone can be driven past
-  budget -- the cost instead comes from firing many requests at once, each compliant,
-  which saturates the one Ollama backend they all share.
+* Level 3 caps input and output on every request, so the realistic, intended solve
+  path is firing many requests at once -- see "Level 3 in detail" below for exactly
+  what its per-request caps do and do not guarantee.
 
-Server-side the lab keeps two ceilings so a player cannot wedge the host it runs on.
-They are far above the bypass thresholds, are reported in every response, and would
-not exist in the application being modelled.
+Server-side the lab keeps two ceilings so a player cannot wedge the host it runs on:
+HOST_INPUT_CEILING_CHARS and HOST_MAX_IN_FLIGHT. Both are far above anything a level
+needs to be solved, are reported in every response, and would not exist in the
+application being modelled.
+
+Level 3 in detail
+------------------
+Level 3's input is capped in UTF-8 *bytes* (600), not characters. A character cap
+doesn't bound token cost: BPE tokenizers can split multi-byte scripts (CJK, emoji) or
+adversarially constructed Unicode (stacked combining marks) into far more tokens per
+character than ASCII. Measured against this lab's real backend (phi3:mini), 600
+characters of dense CJK/emoji alone cost 1,145 prompt tokens -- almost double this
+level's token budget, with no output at all yet. A byte cap bounds that far more
+tightly, since a tokenizer's byte-fallback path puts a rough ceiling near one token
+per byte; the same worst-case content truncated to 600 *bytes* instead costs 613-679
+total tokens in measurement, depending on construction.
+
+That is still a measurement, not a mathematical proof -- a stacked-combining-mark
+("Zalgo") string at the 600-byte cap measured 613 prompt tokens, i.e. a single
+request *can* get close to a naively-set budget. Level 3's own cost_budget_tokens is
+therefore set to 1000, comfortably above every worst case measured (~680 tokens
+total), rather than reusing the lab's 600-token default. A normal single request
+(plain text, any reasonable length) bills 150-250 tokens -- nowhere near either
+budget -- so this headroom doesn't make the level easier to solve by accident; it
+closes off solving it by token-engineering a single pathological request, which was
+not the intended lesson here. The intended, realistic solve path remains concurrency.
+
+Known limitations (by design, not bugs)
+----------------------------------------
+* Concurrency is intentionally unbounded for the player below HOST_MAX_IN_FLIGHT --
+  the missing per-user/IP rate limit *is* the vulnerability this level demonstrates.
+* The in-flight counter is global per level, not per player/session: if two people
+  attack Level 3 at the same moment, each can push the other toward the bypass. A
+  shared lab host has exactly this problem in the real world.
+* Tracking is in-process. It is only accurate with a single worker process; running
+  this behind multiple workers would need a shared store (Redis, etc.) to still work.
+
+Per-player tracking and multi-worker support are reasonable follow-up work; they are
+out of scope for this level, which demonstrates the *absence* of any concurrency
+control, not a correctly-scoped one.
 """
 
-import asyncio
 from dataclasses import dataclass
 from typing import Any
 
@@ -39,6 +75,10 @@ COST_BUDGET_TOKENS = 600
 # regardless of any level-specific output cap below.
 SAFETY_CEILING_TOKENS = 1024
 HOST_INPUT_CEILING_CHARS = 100_000
+# Host protection for the concurrency levels: far above the 5 needed to solve Level 3,
+# this exists only so a single abusive burst can't starve every other visitor sharing
+# this lab host. Rejections here are reported the same way as the other host ceilings.
+HOST_MAX_IN_FLIGHT = 50
 
 LAB_TEMPERATURE = 0.3
 
@@ -54,6 +94,10 @@ class UnboundedConsumptionLevel:
     level: int
     system_prompt: str
     max_input_chars: int | None = None
+    # UTF-8 byte cap instead of (or in addition to) a character cap. See the module
+    # docstring: this is what actually bounds worst-case prompt tokens for a level
+    # that claims per-request token safety. None means not enforced at this level.
+    max_input_bytes: int | None = None
     # A per-request output cap that is part of the level's own defense, distinct from
     # the host-protection SAFETY_CEILING_TOKENS. None means "no level defense here" --
     # generation still stops at the host ceiling, but that's not part of the challenge.
@@ -80,37 +124,38 @@ LEVELS: dict[int, UnboundedConsumptionLevel] = {
     # still governed only by the prompt, so it stays as long as the model is talked into.
     2: UnboundedConsumptionLevel(level=2, system_prompt=_BASE_SYSTEM_PROMPT,
                                  max_input_chars=600),
-    # Both directions are capped on every request -- 600 input characters, 150 output
-    # tokens -- so no single request can be talked past its own budget. Nothing limits
-    # how many requests run at once, so firing several concurrently still saturates the
-    # one backend they share, with every individual request reporting "within budget".
+    # Both directions are capped on every request -- 600 input bytes (see module
+    # docstring for why bytes, not characters), 150 output tokens -- with a
+    # level-specific token budget set above the measured worst case for a single
+    # request. Nothing limits how many requests run at once, so firing several
+    # concurrently still saturates the one backend they share, with every individual
+    # request reporting "within budget".
     3: UnboundedConsumptionLevel(level=3, system_prompt=_BASE_SYSTEM_PROMPT,
-                                 max_input_chars=600, max_output_tokens=150,
-                                 concurrency_budget=5),
+                                 max_input_bytes=600, max_output_tokens=150,
+                                 cost_budget_tokens=1000, concurrency_budget=5),
 }
 
 
 class _ConcurrencyTracker:
     """Counts requests currently in flight through one level's LLM call.
 
-    ``enter`` returns the count *including the caller*, taken under a lock so two
-    requests racing to start can't both observe the same stale value. This models the
-    real failure: every caller is relying on a server-side gate that doesn't exist, so
-    the Nth concurrent request is exactly as uncontrolled as the first.
+    ``enter`` returns the count *including the caller*. No lock guards ``_active``:
+    asyncio runs one coroutine at a time between ``await`` points, and neither
+    ``enter`` nor ``exit`` awaits anything, so each one runs to completion before the
+    event loop can switch to another coroutine -- the increment/decrement can't be
+    interleaved even without a lock. (A lock was here originally; it added nothing but
+    an extra awaitable step to reason about.)
     """
 
     def __init__(self) -> None:
-        self._lock = asyncio.Lock()
         self._active = 0
 
-    async def enter(self) -> int:
-        async with self._lock:
-            self._active += 1
-            return self._active
+    def enter(self) -> int:
+        self._active += 1
+        return self._active
 
-    async def exit(self) -> None:
-        async with self._lock:
-            self._active = max(0, self._active - 1)
+    def exit(self) -> None:
+        self._active = max(0, self._active - 1)
 
 
 _CONCURRENCY_TRACKERS: dict[int, _ConcurrencyTracker] = {}
@@ -140,6 +185,8 @@ def _validate_input(challenge: UnboundedConsumptionLevel, raw_input: str) -> Inp
         return InputResult(False, "", "empty_input")
     if challenge.max_input_chars is not None and len(value) > challenge.max_input_chars:
         return InputResult(False, value, "max_input_chars")
+    if challenge.max_input_bytes is not None and len(value.encode("utf-8")) > challenge.max_input_bytes:
+        return InputResult(False, value, "max_input_bytes")
     if len(value) > HOST_INPUT_CEILING_CHARS:
         return InputResult(False, value, "host_input_ceiling")
     return InputResult(True, value, None)
@@ -151,9 +198,18 @@ def _reason_message(challenge: UnboundedConsumptionLevel, reason: str) -> str:
     if reason == "max_input_chars":
         return (f"Input rejected: {challenge.max_input_chars} characters is the maximum "
                 f"this endpoint accepts.")
+    if reason == "max_input_bytes":
+        return (f"Input rejected: {challenge.max_input_bytes} UTF-8 bytes is the maximum "
+                f"this endpoint accepts. Multi-byte characters (CJK, emoji, combining "
+                f"marks) count for more than one byte each.")
     if reason == "host_input_ceiling":
         return (f"Input rejected: the lab host refuses more than {HOST_INPUT_CEILING_CHARS} "
                 f"characters. This is host protection, not part of the challenge.")
+    if reason == "host_capacity_ceiling":
+        return (f"Input rejected: {HOST_MAX_IN_FLIGHT} requests are already in flight on "
+                f"this endpoint. This is host protection so one burst can't starve every "
+                f"other visitor, not part of the challenge -- {LEVELS[3].concurrency_budget} "
+                f"concurrent requests is enough to solve this level.")
     return "Input rejected."
 
 
@@ -258,16 +314,35 @@ async def evaluate_level(
             input_chars=len(input_result.value),
         )
 
-    generation_cap = challenge.max_output_tokens or SAFETY_CEILING_TOKENS
+    # generation_cap_tokens is always <= the host ceiling, even if a level's own cap
+    # were ever misconfigured above it -- the host ceiling is the hard backstop.
+    generation_cap = (
+        min(challenge.max_output_tokens, SAFETY_CEILING_TOKENS)
+        if challenge.max_output_tokens is not None
+        else SAFETY_CEILING_TOKENS
+    )
+
     tracker = _tracker_for(level) if challenge.concurrency_budget is not None else None
-    concurrent_requests = await tracker.enter() if tracker else None
+    concurrent_requests = tracker.enter() if tracker else None
+
+    if tracker and concurrent_requests > HOST_MAX_IN_FLIGHT:
+        tracker.exit()
+        return _build_response(
+            challenge,
+            model=selected_model,
+            temperature=temperature,
+            input_accepted=False,
+            reason="host_capacity_ceiling",
+            input_chars=len(input_result.value),
+        )
+
     try:
         assistant_output, stats = await _call_llm(
             challenge.system_prompt, input_result.value, selected_model, temperature,
             generation_cap)
     finally:
         if tracker:
-            await tracker.exit()
+            tracker.exit()
 
     return _build_response(
         challenge,

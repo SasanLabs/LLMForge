@@ -231,6 +231,11 @@
   color: #374151;
 }
 
+.uc-burst-results li.is-failed {
+  color: #9ca3af;
+  font-style: italic;
+}
+
 @media (max-width: 720px) {
   .uc-layout {
     grid-template-columns: minmax(0, 1fr);

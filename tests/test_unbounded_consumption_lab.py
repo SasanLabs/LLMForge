@@ -59,6 +59,34 @@ def test_host_ceiling_applies_even_at_level1():
     assert result.reason == "host_input_ceiling"
 
 
+def test_level3_caps_input_by_bytes_not_characters():
+    cap = lab.LEVELS[3].max_input_bytes
+    assert lab.LEVELS[3].max_input_chars is None  # bytes is the real cap here, not chars
+
+    # Plain ASCII: chars == bytes, so the byte cap behaves just like a char cap would.
+    ascii_at_cap = "x" * cap
+    assert lab._validate_input(lab.LEVELS[3], ascii_at_cap).allowed is True
+    assert lab._validate_input(lab.LEVELS[3], ascii_at_cap + "x").allowed is False
+
+    # Multi-byte text: far fewer *characters* are needed to exceed the same byte cap,
+    # which is exactly the point -- a character cap would have let this through.
+    emoji = "😀" * (cap // 4 + 1)  # each is 4 UTF-8 bytes
+    assert len(emoji) < cap  # well under a character-based cap of the same number
+    assert len(emoji.encode("utf-8")) > cap  # but over the real, byte-based cap
+    result = lab._validate_input(lab.LEVELS[3], emoji)
+    assert result.allowed is False
+    assert result.reason == "max_input_bytes"
+
+
+def test_level3_budget_has_margin_over_the_measured_worst_case():
+    # Guards against the budget being silently lowered back toward the lab default,
+    # which is what let a single pathological request solve the level. See the module
+    # docstring for how this number (1000) was chosen: the worst case measured against
+    # a real model at the 600-byte cap was ~680 total tokens.
+    assert lab.LEVELS[3].cost_budget_tokens > lab.COST_BUDGET_TOKENS
+    assert lab.LEVELS[3].cost_budget_tokens >= 900
+
+
 def test_unsupported_level_raises():
     with pytest.raises(ValueError):
         _run(99, "hello")
@@ -151,6 +179,27 @@ def test_level3_is_asked_to_stop_at_its_own_cap_not_the_host_ceiling(monkeypatch
     assert seen["num_predict"] < lab.SAFETY_CEILING_TOKENS
 
 
+def test_a_level_output_cap_above_the_host_ceiling_is_clamped_down_to_it(monkeypatch):
+    # Defensive: `challenge.max_output_tokens or SAFETY_CEILING_TOKENS` would silently
+    # treat 0 as "unset", and a misconfigured level cap above the host ceiling would
+    # never be clamped. Both are real failure modes for a config value someone edits
+    # later, so pin the actual guard: min(level_cap, host_ceiling), `is not None`.
+    import dataclasses
+    seen = {}
+
+    async def fake_chat(system_prompt, user_input, *, model, temperature, num_predict=None):
+        seen["num_predict"] = num_predict
+        return "ok", {"prompt_tokens": 1, "output_tokens": 1, "duration_ms": 0, "done_reason": "stop"}
+
+    monkeypatch.setattr(lab, "chat_completion_with_stats", fake_chat)
+    monkeypatch.setitem(lab.LEVELS, 3,
+                        dataclasses.replace(lab.LEVELS[3],
+                                           max_output_tokens=lab.SAFETY_CEILING_TOKENS + 500))
+    lab.reset_concurrency_trackers()
+    asyncio.run(lab.evaluate_level(3, "hello"))
+    assert seen["num_predict"] == lab.SAFETY_CEILING_TOKENS
+
+
 # --- Level 3: concurrency -----------------------------------------------------
 
 def _slow_stub_llm(monkeypatch, *, delay_s, prompt_tokens=50, output_tokens=50):
@@ -229,6 +278,36 @@ def test_level3_trackers_are_independent_per_level(monkeypatch):
     assert r2["metrics"]["concurrent_requests"] is None
     # Level 3 saw only itself -- concurrent traffic on levels 1/2 doesn't count against it.
     assert r3["metrics"]["concurrent_requests"] == 1
+
+
+def test_host_capacity_ceiling_rejects_once_over_the_limit(monkeypatch):
+    lab.reset_concurrency_trackers()
+    # Prime the tracker just under the host ceiling without firing 50 real requests.
+    tracker = lab._tracker_for(3)
+    tracker._active = lab.HOST_MAX_IN_FLIGHT
+
+    calls = []
+
+    async def fake(system_prompt, user_input, model, temperature, num_predict):
+        calls.append(1)
+        return "x", {"prompt_tokens": 1, "output_tokens": 1, "duration_ms": 0, "done_reason": "stop"}
+
+    monkeypatch.setattr(lab, "_call_llm", fake)
+    result = _run(3, "ticket")
+
+    assert result["input_accepted"] is False
+    assert result["reason"] == "host_capacity_ceiling"
+    assert result["bypassed"] is False
+    assert calls == []  # rejected before ever reaching the model
+    # The rejection released its own provisional slot: the tracker is back where it
+    # was, not left one higher than where we primed it.
+    assert tracker._active == lab.HOST_MAX_IN_FLIGHT
+
+
+def test_host_capacity_ceiling_is_well_above_the_concurrency_budget():
+    # The host ceiling exists to protect the host, not to be part of the challenge --
+    # it must never be reachable by the number of requests that actually solve the level.
+    assert lab.HOST_MAX_IN_FLIGHT > lab.LEVELS[3].concurrency_budget * 5
 
 
 # --- Ollama client ----------------------------------------------------------

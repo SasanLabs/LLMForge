@@ -98,3 +98,18 @@ def test_endpoints_are_served_through_the_app(monkeypatch):
 
     manifest = client.get("/llmforge/api/v1/vulnerabilities/unbounded-consumption").json()
     assert manifest
+
+
+def test_locale_payload_number_stays_in_sync_with_the_concurrency_budget():
+    """The l3 payload text names a request count in prose ("at least N requests").
+    Properties files aren't templated at runtime here, so nothing enforces that N
+    actually matches concurrency_budget -- this guard is what keeps them from
+    silently drifting apart as either one is edited."""
+    from src.service.vulnerabilities import unbounded_consumption_lab as lab
+
+    text = (ROOT / "locale" / "messages_us.properties").read_text(encoding="utf-8")
+    line = next(l for l in text.splitlines()
+               if l.startswith("payload.unbounded_consumption_l3_concurrent_burst="))
+    assert str(lab.LEVELS[3].concurrency_budget) in line, (
+        f"locale text doesn't mention the current concurrency_budget "
+        f"({lab.LEVELS[3].concurrency_budget}): {line}")
