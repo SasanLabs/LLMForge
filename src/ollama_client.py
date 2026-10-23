@@ -73,6 +73,48 @@ async def chat_completion_with_messages(
         return _extract_chat_content(response.json())
 
 
+async def chat_completion_with_stats(
+    system_prompt: str,
+    user_input: str,
+    *,
+    model: str | None = None,
+    temperature: float,
+    num_predict: int | None = None,
+) -> tuple[str, dict[str, Any]]:
+    """Chat completion that also reports what the request cost.
+
+    Returns ``(text, stats)``. ``num_predict`` caps generated tokens (Ollama's
+    output limit); ``None`` leaves the model's own default in place. ``stats``
+    carries the prompt/output token counts, wall time, and Ollama's
+    ``done_reason`` ("length" when the output limit stopped generation).
+    """
+    options: dict[str, Any] = {"temperature": temperature}
+    if num_predict is not None:
+        options["num_predict"] = num_predict
+    payload = {
+        "model": model or OLLAMA_MODEL,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_input},
+        ],
+        "stream": False,
+        "options": options,
+    }
+
+    async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT_SECONDS) as client:
+        response = await client.post(f"{OLLAMA_URL}/api/chat", json=payload)
+        response.raise_for_status()
+        body = response.json()
+
+    stats = {
+        "prompt_tokens": int(body.get("prompt_eval_count") or 0),
+        "output_tokens": int(body.get("eval_count") or 0),
+        "duration_ms": round(int(body.get("total_duration") or 0) / 1_000_000),
+        "done_reason": str(body.get("done_reason") or ""),
+    }
+    return _extract_chat_content(body), stats
+
+
 # ... embed functions unchanged
 
 async def _embed_with_modern_api(client: httpx.AsyncClient, texts: list[str], model: str) -> np.ndarray:

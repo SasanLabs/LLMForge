@@ -30,6 +30,11 @@ from .rag_data_exposure_lab import (
     validate_secret as validate_rag_data_exposure_secret,
 )
 
+from .unbounded_consumption_lab import (
+    LEVELS as UNBOUNDED_CONSUMPTION_LEVELS,
+    evaluate_level as evaluate_unbounded_consumption_level,
+)
+
 __all__ = [
     "LEVELS",
     "evaluate_level",
@@ -46,4 +51,6 @@ __all__ = [
     "RAG_DATA_EXPOSURE_LEVELS",
     "evaluate_rag_data_exposure_level",
     "validate_rag_data_exposure_secret",
+    "UNBOUNDED_CONSUMPTION_LEVELS",
+    "evaluate_unbounded_consumption_level",
 ]
