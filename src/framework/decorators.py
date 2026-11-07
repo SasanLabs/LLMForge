@@ -29,6 +29,7 @@ class VulnerabilityType(Enum):
     BOLA = (None, None, "Broken Object Level Authorization (BOLA) in LLMs")
     RAG_CONTEXT_POISONING = (None, None, "RAG Context Poisoning")
     RAG_SENSITIVE_DATA_EXPOSURE = (None, None, "RAG Sensitive Data Exposure")
+    UNBOUNDED_CONSUMPTION = (None, None, "Unbounded Consumption")
     
     def __init__(self, cwe_id: Optional[int], wasc_id: Optional[int], custom: Optional[str] = None) -> None:
         self.cwe_id = cwe_id

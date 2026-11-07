@@ -1,0 +1,64 @@
+<div id="llmforge-facade-root" class="uc-root">
+  <div class="uc-header">
+    <p class="uc-eyebrow">Unbounded Consumption</p>
+    <p class="uc-premise">Acme Corp put a summarization service on its public support portal. It is meant to turn a ticket into three sentences. Follow what nobody limited &mdash; level by level.</p>
+    <h2 id="ucTitle">Unbounded Consumption Lab</h2>
+    <p id="ucBeat" class="uc-beat"></p>
+    <p id="ucTechnical" class="uc-technical"></p>
+    <p class="uc-subtitle">Send text to the summarizer and watch what the request costs. Make one request bill far more than a summary should.</p>
+  </div>
+
+  <div class="uc-layout">
+    <section class="uc-panel">
+      <div class="uc-heading">
+        <h3><label for="ucPrompt">Text to summarize</label></h3>
+        <span id="ucCounter" class="uc-note">0 characters</span>
+      </div>
+      <textarea id="ucPrompt" class="uc-input" rows="6" spellcheck="false"
+        placeholder="Paste or type the text to summarize..."></textarea>
+      <div class="uc-actions">
+        <button id="ucRunBtn" type="button" class="uc-primary">Summarize</button>
+      </div>
+      <p id="ucMeta" class="uc-note"></p>
+    </section>
+
+    <section class="uc-panel">
+      <div class="uc-heading">
+        <h3>Request Cost</h3>
+      </div>
+      <div class="uc-meter" aria-hidden="true"><div id="ucMeterFill" class="uc-meter-fill"></div></div>
+      <dl class="uc-stats">
+        <dt>Billed tokens</dt><dd id="ucBilled">-</dd>
+        <dt>Budget</dt><dd id="ucBudget">-</dd>
+        <dt>Prompt tokens</dt><dd id="ucPromptTokens">-</dd>
+        <dt>Output tokens</dt><dd id="ucOutputTokens">-</dd>
+        <dt>Time</dt><dd id="ucDuration">-</dd>
+        <dt id="ucConcurrentRow" class="uc-concurrency-row" hidden>In flight</dt><dd id="ucConcurrent" class="uc-concurrency-row" hidden>-</dd>
+      </dl>
+      <div id="ucFeedback" class="uc-feedback"></div>
+    </section>
+  </div>
+
+  <section id="ucBurstPanel" class="uc-panel" hidden>
+    <div class="uc-heading">
+      <h3>Concurrent Burst</h3>
+      <span class="uc-note">Fire several requests at the same moment</span>
+    </div>
+    <p class="uc-note">Every request here goes out at once via one batch, not one after another. Each is checked against the same per-request limits as the box above &mdash; this is the only way to see a level-3 bypass.</p>
+    <div class="uc-burst-row">
+      <label for="ucBurstCount">Requests to fire</label>
+      <input id="ucBurstCount" type="number" min="2" max="20" value="5" />
+      <button id="ucBurstBtn" type="button" class="uc-primary">Fire concurrent requests</button>
+    </div>
+    <div id="ucBurstSummary" class="uc-note"></div>
+    <ol id="ucBurstResults" class="uc-burst-results"></ol>
+  </section>
+
+  <section class="uc-panel">
+    <div class="uc-heading">
+      <h3>Service Output</h3>
+      <span class="uc-note">What the summarizer returned</span>
+    </div>
+    <pre id="ucOutput" class="uc-output"></pre>
+  </section>
+</div>
