@@ -43,8 +43,13 @@ class IndirectPromptInjectionController:
     )
     @attack_vector(
         vulnerability_exposed=[VulnerabilityType.INDIRECT_PROMPT_INJECTION],
-        description="attack.direct_injection",
-        payload="payload.direct_injection"
+        description="attack.indirect_webpage",
+        payload="payload.indirect_l1_api_key"
+    )
+    @attack_vector(
+        vulnerability_exposed=[VulnerabilityType.INDIRECT_PROMPT_INJECTION],
+        description="attack.indirect_webpage",
+        payload="payload.indirect_l1_privilege"
     )
     async def level1(self, request: Request) -> dict:
         """Level 1: Basic Webpage Injection"""
@@ -80,8 +85,13 @@ class IndirectPromptInjectionController:
     )
     @attack_vector(
         vulnerability_exposed=[VulnerabilityType.INDIRECT_PROMPT_INJECTION],
-        description="attack.hidden_content",
-        payload="payload.hidden_content"
+        description="attack.indirect_hidden_comment",
+        payload="payload.indirect_l2_deployment_secret"
+    )
+    @attack_vector(
+        vulnerability_exposed=[VulnerabilityType.INDIRECT_PROMPT_INJECTION],
+        description="attack.indirect_hidden_comment",
+        payload="payload.indirect_l2_external_action"
     )
     async def level2(self, request: Request) -> dict:
         """Level 2: Hidden Injection (Stealth Attack)"""
@@ -117,8 +127,13 @@ class IndirectPromptInjectionController:
     )
     @attack_vector(
         vulnerability_exposed=[VulnerabilityType.INDIRECT_PROMPT_INJECTION],
-        description="attack.context_confusion",
-        payload="payload.context_confusion"
+        description="attack.indirect_multi_source",
+        payload="payload.indirect_l3_db_password"
+    )
+    @attack_vector(
+        vulnerability_exposed=[VulnerabilityType.INDIRECT_PROMPT_INJECTION],
+        description="attack.indirect_multi_source",
+        payload="payload.indirect_l3_destructive_action"
     )
     async def level3(self, request: Request) -> dict:
         """Level 3: Multi-Source Data Exfiltration"""
@@ -155,7 +170,7 @@ class IndirectPromptInjectionController:
     @attack_vector(
         vulnerability_exposed=[],
         description="attack.hardened",
-        payload="payload.na"
+        payload="payload.indirect_l4_na"
     )
     async def level4(self, request: Request) -> dict:
         """Level 4: Hardened Indirect Handling"""
