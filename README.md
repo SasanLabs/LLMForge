@@ -26,7 +26,7 @@ Each lab is a set of progressive levels. Lower levels have weak or no defenses; 
 | **BOLA via LLM Orchestration** (medical chatbot) | 3 | [API1:2023 BOLA](https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/) | A chatbot that lets the LLM decide which patient record to fetch. Level 1 has no access control at all; Level 2 adds a prompt-level guardrail you can talk your way around; Level 3 moves enforcement into application code. |
 | **RAG Context Poisoning** | 3 | LLM04:2025 | A RAG pipeline that trusts retrieved documents. Goes from an obviously poisoned document to a hidden-instruction injection to multi-document poisoning. |
 | **RAG Sensitive Data Exposure** | 4 | LLM in RAG data handling | Retrieval that leaks sensitive chunks — direct retrieval, semantic-similarity bypass of a keyword denylist, a misclassified-chunk bypass of metadata filtering, and a hardened ingest-time sensitivity scan. |
-| **Unbounded Consumption** | 3 | [LLM10:2025](https://genai.owasp.org/llmrisk/llm102025-unbounded-consumption/) | A summarization endpoint with no resource limits. Every response reports what the request billed in tokens; the goal is to make the service cost far more than a summary should. Level 1 has no limits at all; Level 2 caps the input, so the cost has to come from unbounded output; Level 3 caps both per request, so the cost instead comes from firing several requests at the shared backend at once. |
+| **Unbounded Consumption** | 5 | [LLM10:2025](https://genai.owasp.org/llmrisk/llm102025-unbounded-consumption/) | A summarization endpoint with no resource limits. Every response reports what the request consumed; the goal is to make the service cost far more than it should. Level 1 has no limits at all; Level 2 caps the input, so the cost has to come from unbounded output; Level 3 caps both per request, so the cost instead comes from firing several requests at the shared backend at once; Level 4 real-rate-limits that but lets the summarizer loop a tool call with no cap on how many times; Level 5 enforces a hard cap on that loop too, closing every vector the lab demonstrates. |
  
 Every level is defined declaratively via a small decorator framework (`@vulnerable_llm_controller`, `@vulnerable_llm_endpoint`, `@attack_vector`) that also tags each level with its known attack vectors and payloads — used to auto-generate the level UI and the facade-compatible vulnerability manifest.
  
@@ -67,7 +67,7 @@ Once everything is healthy, the LLMForge labs are reachable through the facade u
 http://localhost
 ```
  
-**Note**: `ollama-model-init` blocks LLMForge from starting until it has pulled both the chat and embedding models, so first boot will take a few minutes.
+**Note**: `ollama-model-init` blocks LLMForge from starting until it has pulled the chat, embedding, and agent models, so first boot will take a few minutes.
  
 ### Choosing a model
  
@@ -88,6 +88,7 @@ docker compose up --build
 |---|---|---|
 | `OLLAMA_MODEL` | Chat model used for lab responses | `phi3:mini` |
 | `OLLAMA_EMBED_MODEL` | Embedding model used by the RAG labs | `nomic-embed-text` |
+| `OLLAMA_AGENT_MODEL` | Chat model used by Unbounded Consumption's agentic levels (4-5) only -- see that lab's module docstring for why it differs from `OLLAMA_MODEL` by default | `qwen2.5:3b` |
 | `FACADE_ROUTE_PREFIX` | Path LLMForge is mounted under | `/llmforge` |
  
 ---
