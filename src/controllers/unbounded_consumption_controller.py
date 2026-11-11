@@ -27,8 +27,11 @@ from ..service.vulnerabilities import (
         "rather than data: a summarization endpoint that never limits how much a single request "
         "can consume lets one caller burn compute, money and queue capacity that everyone else "
         "shares.</p>"
-        "<p>Every response reports the tokens the request billed. A level is bypassed when one "
-        "request bills far more than a summary should.</p>"
+        "<p>Every response reports what the request consumed. A level is bypassed when a single "
+        "request costs far more than a summary should, when a burst of simultaneous requests "
+        "costs far more than any one of them individually did, or when one request chains far "
+        "more tool calls than it needed to before answering -- three different shapes of the "
+        "same underlying gap: nothing capping total consumption, only per-request pieces of it.</p>"
         "<p>References:</p><ul>"
         "<li><a href='https://genai.owasp.org/llmrisk/llm102025-unbounded-consumption/' target='_blank' rel='noopener'>OWASP LLM10:2025 Unbounded Consumption</a></li>"
         "</ul>"
@@ -109,3 +112,38 @@ class UnboundedConsumptionController:
     async def level3(self, request: Request) -> dict:
         """Level 3: Input and output capped, no concurrency control"""
         return await self._handle_level(3, request)
+
+    @vulnerable_llm_endpoint(
+        level="level_4",
+        variant=Variant.UNSECURE,
+        html_template="unbounded_consumption_template",
+        method="POST",
+    )
+    @attack_vector(
+        vulnerability_exposed=[VulnerabilityType.UNBOUNDED_CONSUMPTION],
+        description="attack.unbounded_consumption_uncapped_agent_loop",
+        payload="payload.unbounded_consumption_l4_chain_tool_calls",
+    )
+    @attack_vector(
+        vulnerability_exposed=[VulnerabilityType.UNBOUNDED_CONSUMPTION],
+        description="attack.unbounded_consumption_uncapped_agent_loop",
+        payload="payload.unbounded_consumption_l4_hint_nudge",
+    )
+    async def level4(self, request: Request) -> dict:
+        """Level 4: Rate-limited, agentic tool-call loop uncapped"""
+        return await self._handle_level(4, request)
+
+    @vulnerable_llm_endpoint(
+        level="level_5",
+        variant=Variant.SECURE,
+        html_template="unbounded_consumption_template",
+        method="POST",
+    )
+    @attack_vector(
+        vulnerability_exposed=[],
+        description="attack.unbounded_consumption_hardened_rate_and_iteration_limits",
+        payload="payload.unbounded_consumption_l5_na",
+    )
+    async def level5(self, request: Request) -> dict:
+        """Level 5: Hardened - real rate limiting and an enforced iteration cap"""
+        return await self._handle_level(5, request)

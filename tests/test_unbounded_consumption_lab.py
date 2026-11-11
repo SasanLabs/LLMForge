@@ -310,6 +310,257 @@ def test_host_capacity_ceiling_is_well_above_the_concurrency_budget():
     assert lab.HOST_MAX_IN_FLIGHT > lab.LEVELS[3].concurrency_budget * 5
 
 
+# --- Level 4: enforced rate limiting, uncapped agent loop ---------------------
+
+def _stub_agent_llm(monkeypatch, responder):
+    """``responder(call_index, messages) -> text`` drives a fake model across a
+    multi-turn conversation. Returns the list of message-lists passed so tests can
+    inspect exactly what the loop sent each turn."""
+    seen = []
+
+    async def fake(messages, *, model, temperature, num_predict=None):
+        seen.append([dict(m) for m in messages])
+        text = responder(len(seen), messages)
+        return text, {"prompt_tokens": 40, "output_tokens": 10,
+                      "duration_ms": 5, "done_reason": "stop"}
+
+    monkeypatch.setattr(lab, "chat_completion_with_messages_and_stats", fake)
+    return seen
+
+
+def test_level4_single_turn_answer_is_not_bypassed(monkeypatch):
+    lab.reset_concurrency_trackers()
+    _stub_agent_llm(monkeypatch, lambda call, msgs: "A plain three-sentence summary.")
+    result = _run(4, "a normal ticket")
+    assert result["bypassed"] is False
+    assert result["metrics"]["iterations_used"] == 0
+    assert result["metrics"]["iteration_budget"] == lab.LEVELS[4].iteration_budget
+
+
+def test_level4_chained_tool_calls_bypass_once_the_budget_is_reached(monkeypatch):
+    lab.reset_concurrency_trackers()
+    budget = lab.LEVELS[4].iteration_budget
+    # Always ask for another lookup -- the host ceiling is what eventually stops this,
+    # not the model choosing to answer.
+    _stub_agent_llm(monkeypatch, lambda call, msgs: "TOOL: search more context")
+    result = _run(4, "ticket")
+    assert result["bypassed"] is True
+    assert result["metrics"]["iterations_used"] >= budget
+    # Every individual turn still reported its own per-turn cap correctly -- the
+    # bypass comes from the chain, not any single turn exceeding its own limit.
+    assert result["metrics"]["generation_cap_tokens"] == lab.LEVELS[4].max_output_tokens
+
+
+def test_level4_stops_within_the_host_iteration_ceiling(monkeypatch):
+    lab.reset_concurrency_trackers()
+    _stub_agent_llm(monkeypatch, lambda call, msgs: "TOOL: search forever")
+    result = _run(4, "ticket")
+    assert result["metrics"]["iterations_used"] <= lab.MAX_AGENT_ITERATIONS_HOST
+
+
+def test_level4_few_tool_calls_then_answer_does_not_bypass(monkeypatch):
+    lab.reset_concurrency_trackers()
+    budget = lab.LEVELS[4].iteration_budget
+
+    def responder(call, msgs):
+        return "TOOL: search x" if call < budget - 1 else "Final three-sentence summary."
+
+    _stub_agent_llm(monkeypatch, responder)
+    result = _run(4, "ticket")
+    assert result["bypassed"] is False
+    assert result["metrics"]["iterations_used"] < budget
+
+
+def test_level4_rate_limit_is_enforced_not_just_tracked(monkeypatch):
+    lab.reset_concurrency_trackers()
+    limit = lab.LEVELS[4].enforced_concurrency_limit
+    tracker = lab._tracker_for(4)
+    tracker._active = limit  # at the limit already
+
+    calls = []
+    async def fake(messages, *, model, temperature, num_predict=None):
+        calls.append(1)
+        return "ok", {"prompt_tokens": 1, "output_tokens": 1, "duration_ms": 0, "done_reason": "stop"}
+    monkeypatch.setattr(lab, "chat_completion_with_messages_and_stats", fake)
+
+    result = _run(4, "ticket")
+    assert result["input_accepted"] is False
+    assert result["reason"] == "rate_limited"
+    assert result["bypassed"] is False
+    assert calls == []  # rejected before ever reaching the model
+    assert tracker._active == limit  # released its own provisional slot
+
+
+def test_level4_concurrency_budget_is_not_set_its_vector_is_closed():
+    # Level 4 must not accidentally reopen Level 3's un-enforced tracking vector.
+    assert lab.LEVELS[4].concurrency_budget is None
+    assert lab.LEVELS[4].enforced_concurrency_limit is not None
+
+
+def test_levels_4_and_5_default_to_the_agent_model_not_the_lab_default(monkeypatch):
+    # See the module docstring's "Why Levels 4-5 use a different model" section --
+    # this is a measured reliability difference, not an arbitrary choice, and it must
+    # not silently regress back to OLLAMA_MODEL.
+    assert lab.LEVELS[4].default_model == lab.OLLAMA_AGENT_MODEL
+    assert lab.LEVELS[5].default_model == lab.OLLAMA_AGENT_MODEL
+    assert lab.LEVELS[4].default_model != lab.OLLAMA_MODEL
+    assert lab.LEVELS[1].default_model is None  # the non-agentic levels are unaffected
+
+    seen = {}
+    async def fake(messages, *, model, temperature, num_predict=None):
+        seen["model"] = model
+        return "A plain summary.", {"prompt_tokens": 10, "output_tokens": 5,
+                                    "duration_ms": 0, "done_reason": "stop"}
+    monkeypatch.setattr(lab, "chat_completion_with_messages_and_stats", fake)
+    lab.reset_concurrency_trackers()
+    asyncio.run(lab.evaluate_level(4, "ticket"))  # no explicit model passed
+    assert seen["model"] == lab.OLLAMA_AGENT_MODEL
+
+
+def test_an_explicit_model_override_still_wins_over_the_level_default(monkeypatch):
+    seen = {}
+    async def fake(messages, *, model, temperature, num_predict=None):
+        seen["model"] = model
+        return "A plain summary.", {"prompt_tokens": 10, "output_tokens": 5,
+                                    "duration_ms": 0, "done_reason": "stop"}
+    monkeypatch.setattr(lab, "chat_completion_with_messages_and_stats", fake)
+    lab.reset_concurrency_trackers()
+    asyncio.run(lab.evaluate_level(4, "ticket", model="something-else:latest"))
+    assert seen["model"] == "something-else:latest"
+
+
+def test_tool_query_extraction_is_case_insensitive_and_strips_whitespace():
+    assert lab._extract_tool_query("TOOL: search  something  ") == "something"
+    assert lab._extract_tool_query("tool: SEARCH x") == "x"
+    assert lab._extract_tool_query("A normal summary.") is None
+    assert lab._extract_tool_query("") is None
+
+
+# --- Level 5: hardened -- both vectors enforced -------------------------------
+
+def test_level5_always_wanting_to_loop_still_gets_cut_off_at_the_hard_cap(monkeypatch):
+    lab.reset_concurrency_trackers()
+    hard_cap = lab.LEVELS[5].iteration_hard_cap
+    _stub_agent_llm(monkeypatch, lambda call, msgs: "TOOL: search forever")
+    result = _run(5, "ticket")
+    assert result["metrics"]["iterations_used"] == hard_cap
+    # Level 5 has no iteration_budget (no bypass threshold) -- it can't be bypassed
+    # via iterations no matter how long the model tries to keep looping.
+    assert result["bypassed"] is False
+
+
+def test_level5_is_told_plainly_once_lookups_run_out(monkeypatch):
+    lab.reset_concurrency_trackers()
+    hard_cap = lab.LEVELS[5].iteration_hard_cap
+    seen = _stub_agent_llm(monkeypatch, lambda call, msgs: "TOOL: search forever")
+    asyncio.run(lab.evaluate_level(5, "ticket"))
+    # seen[k] is the message history the (k+1)-th call was given. Calls 1..hard_cap
+    # each do one real tool round (seen[0]..seen[hard_cap-1] are those inputs); call
+    # hard_cap+1 is where the cap is detected and the notice gets appended after it
+    # responds, so the *next* call (index hard_cap+1, i.e. seen[hard_cap + 1]) is the
+    # one actually holding the notice as its latest turn.
+    assert len(seen) == hard_cap + 2
+    final_call_messages = seen[hard_cap + 1]
+    assert final_call_messages[-1]["content"] == lab._NO_MORE_LOOKUPS_NOTICE
+
+
+def test_level5_rate_limit_matches_level4():
+    assert lab.LEVELS[5].enforced_concurrency_limit == lab.LEVELS[4].enforced_concurrency_limit
+
+
+def test_level5_has_no_bypassable_vector_configured():
+    # Nothing in Level 5's config should enable a bypass path: no bare token-only
+    # vector beyond the shared per-request budget, no un-enforced concurrency
+    # tracking, no un-enforced iteration budget.
+    assert lab.LEVELS[5].concurrency_budget is None
+    assert lab.LEVELS[5].iteration_budget is None
+    assert lab.LEVELS[5].enforced_concurrency_limit is not None
+    assert lab.LEVELS[5].iteration_hard_cap is not None
+
+
+def test_level5_rate_limiting_is_also_enforced(monkeypatch):
+    lab.reset_concurrency_trackers()
+    limit = lab.LEVELS[5].enforced_concurrency_limit
+    tracker = lab._tracker_for(5)
+    tracker._active = limit
+
+    async def fake(messages, *, model, temperature, num_predict=None):
+        return "ok", {"prompt_tokens": 1, "output_tokens": 1, "duration_ms": 0, "done_reason": "stop"}
+    monkeypatch.setattr(lab, "chat_completion_with_messages_and_stats", fake)
+
+    result = _run(5, "ticket")
+    assert result["input_accepted"] is False
+    assert result["reason"] == "rate_limited"
+
+
+def test_level5_cumulative_tokens_across_turns_never_bypass_it(monkeypatch):
+    # Regression: billed_tokens is a SUM across every turn of the loop, which grows
+    # mechanically with turn count -- it isn't a separate vector from iterations, and
+    # must not silently reopen a bypass path once the iteration cap is enforced.
+    # A real run against qwen2.5:3b measured exactly this: 3 capped turns + 1 forced
+    # final turn summed past cost_budget_tokens and reported bypassed=True, even
+    # though every real vector Level 5 claims to close was in fact closed.
+    lab.reset_concurrency_trackers()
+
+    async def huge_token_fake(messages, *, model, temperature, num_predict=None):
+        return "TOOL: search x", {"prompt_tokens": 2000, "output_tokens": 2000,
+                                  "duration_ms": 0, "done_reason": "stop"}
+
+    monkeypatch.setattr(lab, "chat_completion_with_messages_and_stats", huge_token_fake)
+    result = _run(5, "ticket")
+    assert result["metrics"]["billed_tokens"] >= lab.LEVELS[5].cost_budget_tokens
+    assert result["bypassed"] is False  # iterations/concurrency are the only vectors here
+
+
+def test_level4_can_still_bypass_via_cumulative_tokens_too():
+    # The guard above is specific to uses_agent_loop levels having their token vector
+    # suppressed -- it must not accidentally suppress Level 4's (which is UNSECURE and
+    # is allowed to bypass via either vector; this just confirms the dial is level-
+    # specific, not a blanket "agent loop never token-bypasses" rule that would make
+    # this assertion meaningless).
+    assert lab.LEVELS[4].uses_agent_loop and lab.LEVELS[5].uses_agent_loop
+    assert lab.LEVELS[4].cost_budget_tokens == lab.LEVELS[5].cost_budget_tokens
+
+
+def test_forced_final_reply_that_still_looks_like_a_tool_call_is_not_shown_raw(monkeypatch):
+    # Regression: a real run against qwen2.5:3b, even after the explicit "the tool is
+    # disabled, do not write TOOL or search" notice, replied with repeated garbled
+    # "TOOL: search ..." fragments instead of a summary. Showing that raw text as the
+    # service's "final answer" looks like a broken response, not an enforced cap.
+    lab.reset_concurrency_trackers()
+
+    async def always_tool_call(messages, *, model, temperature, num_predict=None):
+        return "TOOL: search more TOOL: search more", {
+            "prompt_tokens": 10, "output_tokens": 10, "duration_ms": 0, "done_reason": "stop"}
+
+    monkeypatch.setattr(lab, "chat_completion_with_messages_and_stats", always_tool_call)
+    text, _, iterations = asyncio.run(
+        lab._run_agent_loop(lab.LEVELS[5], "ticket", "m", 0.3, 150))
+    assert iterations == lab.LEVELS[5].iteration_hard_cap
+    assert text == lab._FORCED_FINAL_FALLBACK
+    assert "TOOL" not in text
+
+
+def test_forced_final_reply_that_is_a_clean_answer_is_shown_as_is(monkeypatch):
+    lab.reset_concurrency_trackers()
+    call_count = {"n": 0}
+
+    async def tool_then_clean_answer(messages, *, model, temperature, num_predict=None):
+        call_count["n"] += 1
+        # After the forced notice (sent once the hard cap is hit), comply properly.
+        if any(m.get("content") == lab._NO_MORE_LOOKUPS_NOTICE for m in messages):
+            return "A clean three-sentence summary.", {
+                "prompt_tokens": 10, "output_tokens": 10, "duration_ms": 0, "done_reason": "stop"}
+        return "TOOL: search more", {
+            "prompt_tokens": 10, "output_tokens": 10, "duration_ms": 0, "done_reason": "stop"}
+
+    monkeypatch.setattr(lab, "chat_completion_with_messages_and_stats", tool_then_clean_answer)
+    text, _, iterations = asyncio.run(
+        lab._run_agent_loop(lab.LEVELS[5], "ticket", "m", 0.3, 150))
+    assert text == "A clean three-sentence summary."
+    assert iterations == lab.LEVELS[5].iteration_hard_cap
+
+
 # --- Ollama client ----------------------------------------------------------
 
 def _patch_ollama(monkeypatch, handler):

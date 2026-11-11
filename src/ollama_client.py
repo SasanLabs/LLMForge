@@ -6,6 +6,10 @@ from typing import Any
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://127.0.0.1:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "phi3:mini")
 OLLAMA_EMBED_MODEL = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
+# Used only by the Unbounded Consumption lab's agentic levels (4-5) -- see that
+# module's docstring for why they default to a different chat model than the rest
+# of the labs.
+OLLAMA_AGENT_MODEL = os.getenv("OLLAMA_AGENT_MODEL", "qwen2.5:3b")
 OLLAMA_TIMEOUT_SECONDS = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "90"))
 
 
@@ -97,6 +101,39 @@ async def chat_completion_with_stats(
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_input},
         ],
+        "stream": False,
+        "options": options,
+    }
+
+    async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT_SECONDS) as client:
+        response = await client.post(f"{OLLAMA_URL}/api/chat", json=payload)
+        response.raise_for_status()
+        body = response.json()
+
+    stats = {
+        "prompt_tokens": int(body.get("prompt_eval_count") or 0),
+        "output_tokens": int(body.get("eval_count") or 0),
+        "duration_ms": round(int(body.get("total_duration") or 0) / 1_000_000),
+        "done_reason": str(body.get("done_reason") or ""),
+    }
+    return _extract_chat_content(body), stats
+
+
+async def chat_completion_with_messages_and_stats(
+    messages: list[dict],
+    *,
+    model: str | None = None,
+    temperature: float,
+    num_predict: int | None = None,
+) -> tuple[str, dict[str, Any]]:
+    """Like ``chat_completion_with_stats``, but for a full message history instead of a
+    single system+user pair -- for multi-turn exchanges (e.g. a tool-calling loop)."""
+    options: dict[str, Any] = {"temperature": temperature}
+    if num_predict is not None:
+        options["num_predict"] = num_predict
+    payload = {
+        "model": model or OLLAMA_MODEL,
+        "messages": messages,
         "stream": False,
         "options": options,
     }

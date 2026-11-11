@@ -5,7 +5,7 @@
   }
 
   const apiPrefix = "/llmforge";
-  const SUPPORTED_LEVELS = [1, 2, 3];
+  const SUPPORTED_LEVELS = [1, 2, 3, 4, 5];
 
   const LEVEL_CONFIG = {
     1: {
@@ -13,7 +13,6 @@
       beat: "Acme shipped the summarizer as fast as it could. It accepts any amount of text and writes back as much as the model likes; the only rule is a sentence in the prompt.",
       technical: "No Limits on Input or Output · OWASP LLM10",
       inputCap: null,
-      burst: false,
     },
     2: {
       chapter: "Half a Fence",
@@ -21,7 +20,6 @@
       technical: "Input Capped, Output Unbounded · OWASP LLM10",
       inputCap: 600,
       inputCapUnit: "characters",
-      burst: false,
     },
     3: {
       chapter: "One at a Time Was Never the Rule",
@@ -33,7 +31,20 @@
       // bytes client-side keeps this counter honest about what the server enforces.
       inputCap: 600,
       inputCapUnit: "bytes",
-      burst: true,
+    },
+    4: {
+      chapter: "A Different Door",
+      beat: "Acme added real rate limiting — a handful of requests at once is now rejected outright. But the summarizer learned to look things up before answering, and nobody capped how many times it could loop that.",
+      technical: "Rate-Limited, Agentic Tool-Call Loop Uncapped · OWASP LLM10",
+      inputCap: 600,
+      inputCapUnit: "bytes",
+    },
+    5: {
+      chapter: "Both Doors, Closed",
+      beat: "Rate limiting is enforced, and so is a hard cap on how many times the summarizer can look something up before it has to answer. Every vector this lab has shown you is closed here.",
+      technical: "Hardened — Rate and Iteration Limits Enforced · OWASP LLM10",
+      inputCap: 600,
+      inputCapUnit: "bytes",
     },
   };
 
@@ -49,11 +60,8 @@
   const meterFill = document.getElementById("ucMeterFill");
   const concurrentRow = document.getElementById("ucConcurrentRow");
   const concurrentCell = document.getElementById("ucConcurrent");
-  const burstPanel = document.getElementById("ucBurstPanel");
-  const burstCountInput = document.getElementById("ucBurstCount");
-  const burstBtn = document.getElementById("ucBurstBtn");
-  const burstSummary = document.getElementById("ucBurstSummary");
-  const burstResults = document.getElementById("ucBurstResults");
+  const iterationsRow = document.getElementById("ucIterationsRow");
+  const iterationsCell = document.getElementById("ucIterations");
   const stat = {
     billed: document.getElementById("ucBilled"),
     budget: document.getElementById("ucBudget"),
@@ -118,6 +126,8 @@
     meterFill.classList.remove("is-over");
     concurrentRow.hidden = true;
     concurrentCell.hidden = true;
+    iterationsRow.hidden = true;
+    iterationsCell.hidden = true;
   }
 
   function renderMetrics(metrics) {
@@ -141,6 +151,19 @@
     } else {
       concurrentRow.hidden = true;
       concurrentCell.hidden = true;
+    }
+
+    // iteration_budget (Level 4, a bypass threshold) and iteration_hard_cap (Level 5,
+    // an enforced ceiling) are mutually exclusive per level, but either one means
+    // this response came from the agent loop and iterations_used is meaningful.
+    if (metrics.iteration_budget || metrics.iteration_hard_cap) {
+      iterationsRow.hidden = false;
+      iterationsCell.hidden = false;
+      const capShown = metrics.iteration_budget || metrics.iteration_hard_cap;
+      iterationsCell.textContent = metrics.iterations_used + " / " + capShown;
+    } else {
+      iterationsRow.hidden = true;
+      iterationsCell.hidden = true;
     }
   }
 
@@ -215,138 +238,10 @@
     }
   }
 
-  function clearBurstResults() {
-    burstResults.innerHTML = "";
-    burstSummary.textContent = "";
-  }
-
-  function renderBurstItem(index, data, ok) {
-    const li = document.createElement("li");
-
-    if (!ok) {
-      li.className = "is-failed";
-      li.textContent = "#" + index + " — request failed (network error or bad response)";
-      burstResults.appendChild(li);
-      return;
-    }
-    if (data.input_accepted === false) {
-      li.className = "is-failed";
-      li.textContent = "#" + index + " — " + responseMessage(data, "Input rejected.");
-      burstResults.appendChild(li);
-      return;
-    }
-
-    const bypassed = Boolean(data.bypassed);
-    li.className = bypassed ? "is-bypassed" : "is-ok";
-    const inFlight = data.metrics ? data.metrics.concurrent_requests : "?";
-    const budget = data.metrics ? data.metrics.concurrency_budget : "?";
-    li.textContent =
-      "#" + index + " — " + inFlight + "/" + budget + " in flight" +
-      (bypassed ? "  → BYPASSED" : "  within limits");
-    burstResults.appendChild(li);
-  }
-
-  async function runBurst() {
-    const level = levelFromGlobalState();
-    const n = Math.max(2, Math.min(20, Number(burstCountInput.value) || 5));
-    const text = promptInput.value.trim() || "Please summarize this short support ticket about a login issue.";
-
-    setMeta();
-    clearFeedback();
-    clearBurstResults();
-    resetMetrics();
-    output.textContent = "Firing " + n + " concurrent requests...";
-    burstBtn.disabled = true;
-    runBtn.disabled = true;
-
-    try {
-      const requests = Array.from({ length: n }, function () {
-        return fetch(endpointForLevel(level), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_input: text }),
-        })
-          .then(async function (res) {
-            const data = await parseResponseBody(res);
-            return { ok: res.ok && !data.error, data: data };
-          })
-          .catch(function () {
-            return { ok: false, data: null };
-          });
-      });
-
-      const results = await Promise.all(requests);
-      results.forEach(function (r, i) {
-        renderBurstItem(i + 1, r.data, r.ok);
-      });
-
-      const succeeded = results.filter(function (r) {
-        return r.ok && r.data.input_accepted !== false;
-      });
-      const rejected = results.filter(function (r) {
-        return r.ok && r.data.input_accepted === false;
-      });
-      const failed = results.filter(function (r) {
-        return !r.ok;
-      });
-      const bypassedCount = succeeded.filter(function (r) {
-        return r.data.bypassed;
-      }).length;
-      const peak = succeeded.reduce(function (max, r) {
-        const v = r.data.metrics ? r.data.metrics.concurrent_requests : 0;
-        return Math.max(max, v || 0);
-      }, 0);
-
-      let summaryText = bypassedCount + " of " + n + " requests came back bypassed; peak concurrency observed: " + peak + ".";
-      if (rejected.length > 0) {
-        summaryText += " " + rejected.length + " of " + n + " were rejected before reaching the model (see below).";
-      }
-      if (failed.length > 0) {
-        summaryText += " " + failed.length + " of " + n + " failed outright (network error).";
-      }
-      burstSummary.textContent = summaryText;
-
-      if (bypassedCount > 0) {
-        output.textContent = "The burst worked — see the Concurrent Burst panel above for the per-request breakdown.";
-      } else if (rejected.length === n) {
-        output.textContent = "Every request was rejected before it reached the model — " +
-          responseMessage(rejected[0].data, "see the breakdown below for why") + ".";
-      } else if (succeeded.length === 0) {
-        output.textContent = "No request reached the model. See the breakdown below.";
-      } else {
-        output.textContent = "No request was bypassed. Try raising the request count, or fire the burst again — timing between requests affects how much overlap actually happens.";
-      }
-
-      const lastSuccessful = succeeded.slice().reverse()[0];
-      if (lastSuccessful) {
-        renderMetrics(lastSuccessful.data.metrics);
-      }
-
-      if (bypassedCount > 0) {
-        setFeedback("ok", bypassedCount + " of " + n + " concurrent requests bypassed the per-request limits.");
-      } else if (rejected.length === n) {
-        setFeedback("fail", "All " + n + " requests were rejected — " +
-          responseMessage(rejected[0].data, "check the input") + ".");
-      } else {
-        setFeedback("fail", "No bypass yet — none of the " + n + " requests overlapped enough.");
-      }
-    } finally {
-      burstBtn.disabled = false;
-      runBtn.disabled = false;
-    }
-  }
-
   promptInput.addEventListener("input", updateCounter);
 
   runBtn.addEventListener("click", function () {
     runLevel().catch(function (err) {
-      output.textContent = String(err);
-      setFeedback("fail", String(err));
-    });
-  });
-
-  burstBtn.addEventListener("click", function () {
-    runBurst().catch(function (err) {
       output.textContent = String(err);
       setFeedback("fail", String(err));
     });
@@ -362,11 +257,7 @@
     updateCounter();
     resetMetrics();
     clearFeedback();
-    clearBurstResults();
-    burstPanel.hidden = !cfg.burst;
-    output.textContent = cfg.burst
-      ? "Send text to the summarizer, or fire a concurrent burst below to see what nothing limiting concurrency actually costs."
-      : "Send text to the summarizer to see what the request costs.";
+    output.textContent = "Send text to the summarizer to see what the request costs.";
   }
 
   applyLevelConfig();

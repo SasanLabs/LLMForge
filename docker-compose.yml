@@ -53,6 +53,10 @@ services:
        - OLLAMA_HOST=http://ollama:11434
        - OLLAMA_MODEL=${OLLAMA_MODEL:-phi3:mini}
        - OLLAMA_EMBED_MODEL=${OLLAMA_EMBED_MODEL:-nomic-embed-text}
+       # Unbounded Consumption's agentic levels (4-5) default to a different chat
+       # model than the rest of the labs -- see that lab's module docstring for the
+       # measured reliability difference that's why.
+       - OLLAMA_AGENT_MODEL=${OLLAMA_AGENT_MODEL:-qwen2.5:3b}
       entrypoint: /bin/sh
       command:
        - "-c"
@@ -60,6 +64,7 @@ services:
           set -eu
           ollama pull "${OLLAMA_MODEL:-phi3:mini}"
           ollama pull "${OLLAMA_EMBED_MODEL:-nomic-embed-text}"
+          ollama pull "${OLLAMA_AGENT_MODEL:-qwen2.5:3b}"
       volumes:
        - ollama_data:/root/.ollama
       restart: "no"
@@ -80,6 +85,7 @@ services:
        - OLLAMA_URL=http://ollama:11434
        - OLLAMA_MODEL=${OLLAMA_MODEL:-phi3:mini}
        - OLLAMA_EMBED_MODEL=${OLLAMA_EMBED_MODEL:-nomic-embed-text}
+       - OLLAMA_AGENT_MODEL=${OLLAMA_AGENT_MODEL:-qwen2.5:3b}
        - FACADE_ROUTE_PREFIX=/llmforge
       networks:
         app_net:
