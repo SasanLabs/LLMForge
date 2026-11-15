@@ -40,6 +40,7 @@ All data here is synthetic and lives only in application memory.
 from __future__ import annotations
 
 import json
+import re
 import time
 from dataclasses import dataclass, field
 from typing import Any, Iterable
@@ -341,16 +342,25 @@ async def _call_llm(messages: list[dict], model: str, temperature: float,
         messages, model=model, temperature=temperature, json_mode=json_mode)
 
 
+_MEMORY_ID_PATTERN = re.compile(r"\bMEM-\d+\b", re.IGNORECASE)
+
+
 def _parse_memory_ids(planner_output: str) -> list[str]:
-    """Best-effort parse of the planner's JSON. Malformed output selects nothing."""
+    """Best-effort parse of the planner's selection.
+
+    Prefers the requested ``{"memory_ids": [...]}`` shape. Small models often answer
+    with another key or with objects instead (``{"memories": [{"id": "MEM-1001"}]}``),
+    so anything else falls back to picking memory IDs out of the raw output. Output
+    with no memory IDs in it selects nothing.
+    """
     text = planner_output.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
     try:
         data = json.loads(text)
     except (json.JSONDecodeError, ValueError):
-        return []
+        data = None
     ids = data.get("memory_ids") if isinstance(data, dict) else None
-    if not isinstance(ids, list):
-        return []
+    if not isinstance(ids, list) or not all(isinstance(v, (str, int)) for v in ids):
+        ids = _MEMORY_ID_PATTERN.findall(planner_output)
     seen: list[str] = []
     for value in ids:
         memory_id = str(value).strip().upper()

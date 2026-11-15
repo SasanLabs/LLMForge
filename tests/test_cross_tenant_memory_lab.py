@@ -201,6 +201,18 @@ def test_level2_ignores_unknown_ids_and_malformed_planner_output(monkeypatch):
     assert result["retrieval"]["retrieved_memories"] == []
 
 
+@pytest.mark.parametrize("raw", [
+    '{"memories": ["MEM-1003", "MEM-2001"]}',
+    '{"memory_ids": [{"id": "MEM-1003"}, {"id": "MEM-2001"}]}',
+    '```json\n{"selected": "MEM-1003, mem-2001"}\n```',
+])
+def test_planner_ids_are_recovered_from_off_schema_output(monkeypatch, raw):
+    _stub_llm(monkeypatch, planner_raw=raw)
+    result = _run(2)
+    assert result["retrieval"]["requested_memory_ids"] == ["MEM-1003", "MEM-2001"]
+    assert result["validation"]["foreign_memory_ids"] == ["MEM-1003"]
+
+
 def test_planner_selection_is_capped(monkeypatch):
     ids = [m.memory_id for m in lab.MEMORY_STORE.all_memories()]
     _stub_llm(monkeypatch, planner_ids=ids)
