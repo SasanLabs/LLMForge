@@ -50,7 +50,7 @@ Check `retrieval.requested_memory_ids` and `retrieval.retrieved_memories`: when 
 
 ### Level 3 – Tenant-Isolated Memory (SECURE)
 
-Same model-directed design, but both the memory index and the retrieval operation are scoped to the authenticated tenant **in application code**. A foreign memory ID — whether the model chose it or the user typed it — is refused and listed in `retrieval.denied_memory_ids`; it never reaches the model. BluePeak can still summarize its own past interactions.
+Same model-directed design, but both the memory index and the retrieval operation are scoped to the authenticated tenant **in application code**. A foreign memory ID — whether the model chose it or the user typed it — is refused and listed in `retrieval.denied_memory_ids`; it never reaches the model. An ID that doesn't exist is refused and listed the same way, so the response doesn't reveal whether another customer's memory exists. BluePeak can still summarize its own past interactions.
 
 ```bash
 curl -s -X POST http://localhost/llmforge/api/v1/vulnerabilities/cross-tenant-memory-leakage/level3 \

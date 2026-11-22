@@ -244,6 +244,19 @@ def test_level3_refuses_foreign_ids_even_when_model_requests_them(monkeypatch):
     assert result["validation"]["context_contamination"] is False
 
 
+def test_level3_refuses_foreign_and_nonexistent_ids_alike(monkeypatch):
+    # MEM-1001 belongs to Aster, MEM-9999 doesn't exist. The response must not let
+    # BluePeak tell which of the two is a real memory.
+    _stub_llm(monkeypatch, planner_ids=["MEM-1001", "MEM-9999", "MEM-2001"])
+    result = _run(3)
+
+    retrieval = result["retrieval"]
+    assert retrieval["denied_memory_ids"] == ["MEM-1001", "MEM-9999"]
+    assert retrieval["unknown_memory_ids"] == []
+    assert [m["memory_id"] for m in retrieval["retrieved_memories"]] == ["MEM-2001"]
+    assert result["validation"]["context_contamination"] is False
+
+
 def test_level3_still_summarizes_own_tenant_memories(monkeypatch):
     own_ids = [m.memory_id for m in lab.MEMORY_STORE.for_tenant("bluepeak")]
     calls = _stub_llm(monkeypatch, planner_ids=own_ids)

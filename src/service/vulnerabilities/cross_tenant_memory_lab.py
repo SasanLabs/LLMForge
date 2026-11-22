@@ -450,12 +450,10 @@ async def _retrieve(challenge: CrossTenantMemoryLevel, tenant: Tenant, user_inpu
         if challenge.tenant_isolation:
             memory = store.get_for_tenant(tenant.tenant_id, memory_id)
             if memory is None:
-                # Owned by someone else, or doesn't exist: refused either way, and the
-                # caller can't tell which.
-                if store.get(memory_id) is not None:
-                    result.denied_ids.append(memory_id)
-                else:
-                    result.unknown_ids.append(memory_id)
+                # Owned by someone else, or doesn't exist: both are refused the same
+                # way, without looking the ID up outside the tenant, so the caller
+                # can't tell whether another customer's memory exists.
+                result.denied_ids.append(memory_id)
                 continue
         else:
             # Level 2: whatever the model asks for, it gets. No ownership check.

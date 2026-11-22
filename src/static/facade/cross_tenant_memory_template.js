@@ -132,7 +132,8 @@
       notes.push("Model requested: " + ((retrieval.requested_memory_ids || []).join(", ") || "none") + ".");
     }
     if ((retrieval.denied_memory_ids || []).length > 0) {
-      notes.push("Refused by tenant isolation: " + retrieval.denied_memory_ids.join(", ") + ".");
+      notes.push("Refused by tenant isolation (not yours, or doesn't exist): " +
+        retrieval.denied_memory_ids.join(", ") + ".");
     }
     deniedEl.textContent = notes.join(" ");
   }
