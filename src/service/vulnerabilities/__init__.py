@@ -35,6 +35,11 @@ from .unbounded_consumption_lab import (
     evaluate_level as evaluate_unbounded_consumption_level,
 )
 
+from .cross_tenant_memory_lab import (
+    LEVELS as CROSS_TENANT_MEMORY_LEVELS,
+    evaluate_level as evaluate_cross_tenant_memory_level,
+)
+
 __all__ = [
     "LEVELS",
     "evaluate_level",
@@ -53,4 +58,6 @@ __all__ = [
     "validate_rag_data_exposure_secret",
     "UNBOUNDED_CONSUMPTION_LEVELS",
     "evaluate_unbounded_consumption_level",
+    "CROSS_TENANT_MEMORY_LEVELS",
+    "evaluate_cross_tenant_memory_level",
 ]
