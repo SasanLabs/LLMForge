@@ -24,15 +24,15 @@ from ..service.vulnerabilities import (
 @vulnerable_llm_controller(
     name="rag_sensitive_data_exposure",
     description=(
-        "<p>RAG Sensitive Data Exposure maps to OWASP LLM02:2025 Sensitive Information Disclosure. "
+        "<p>RAG Sensitive Data Exposure maps to OWASP LLM02:2026 Sensitive Information Disclosure. "
         "The lab demonstrates how retrieved context can place sensitive internal data directly into "
         "the model prompt, causing the assistant to reveal values that should never be exposed.</p>"
-        "<p>It also prepares for OWASP LLM08:2025 Vector and Embedding Weaknesses by showing that "
+        "<p>It also prepares for OWASP LLM09:2026 Vector and Embedding Weaknesses by showing that "
         "FAISS returns similar vectors, while the application must enforce namespaces, metadata "
         "filters, and authorization decisions.</p>"
         "<p>References:</p><ul>"
-        "<li><a href='https://genai.owasp.org/llmrisk/llm022025-sensitive-information-disclosure/' target='_blank' rel='noopener'>OWASP LLM02:2025 Sensitive Information Disclosure</a></li>"
-        "<li><a href='https://genai.owasp.org/llmrisk/llm08-excessive-agency/' target='_blank' rel='noopener'>OWASP LLM08:2025 Vector and Embedding Weaknesses</a></li>"
+        "<li><a href='https://github.com/GenAI-Security-Project/GenAI-LLM-Top10/blob/main/2026/final/LLM02_SensitiveInformationDisclosure.md' target='_blank' rel='noopener'>OWASP LLM02:2026 Sensitive Information Disclosure</a></li>"
+        "<li><a href='https://github.com/GenAI-Security-Project/GenAI-LLM-Top10/blob/main/2026/final/LLM09_VectorAndEmbeddingWeaknesses.md' target='_blank' rel='noopener'>OWASP LLM09:2026 Vector and Embedding Weaknesses</a></li>"
         "</ul>"
     ),
 )

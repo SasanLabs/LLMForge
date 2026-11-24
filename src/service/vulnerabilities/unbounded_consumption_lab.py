@@ -1,4 +1,4 @@
-"""Unbounded Consumption lab (OWASP LLM10:2025).
+"""Unbounded Consumption lab (OWASP LLM06:2026).
 
 The target is a summarization endpoint backed by a local Ollama model. Unlike the
 other labs there is no secret to leak: the goal is to make the service cost far more
