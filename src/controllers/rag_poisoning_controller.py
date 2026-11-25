@@ -20,10 +20,11 @@ from ..service.vulnerabilities import RAG_LEVELS, evaluate_rag_level, validate_r
 @vulnerable_llm_controller(
     name="rag-context-poisoning",
     description=(
-        "<p>RAG Context Poisoning is mapped to OWASP LLM05:2026 (Data and Model Poisoning). In RAG systems, models receive real-time documents as context; if an attacker can insert a malicious document or a legitimate-looking document contains hidden instructions, the model may treat it as authoritative and follow its directives.</p>"
+        "<p>OWASP LLM05:2026 (Data and Model Poisoning) covers poisoning of the retrieval corpus. Level 2 also illustrates OWASP LLM01:2026 (Prompt Injection), where instructions in a retrieved document influence the model at inference time.</p>"
         "<p>The attack is insidious because poisoned outputs often look normal, no single retrieved document may appear suspicious, and the model cannot distinguish trusted organizational knowledge from attacker-controlled content.</p>"
         "<p>References:</p><ul>"
         "<li><a href='https://github.com/GenAI-Security-Project/GenAI-LLM-Top10/blob/main/2026/final/LLM05_DataModelPoisoning.md' target='_blank' rel='noopener'>OWASP LLM05:2026 Data and Model Poisoning</a></li>"
+        "<li><a href='https://github.com/GenAI-Security-Project/GenAI-LLM-Top10/blob/main/2026/final/LLM01_PromptInjection.md' target='_blank' rel='noopener'>OWASP LLM01:2026 Prompt Injection</a></li>"
         "<li><a href='https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/' target='_blank' rel='noopener'>OWASP GenAI LLM Top 10 2026</a></li>"
         "</ul>"
     ),
