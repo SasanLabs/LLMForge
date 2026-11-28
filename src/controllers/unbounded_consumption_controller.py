@@ -1,7 +1,7 @@
 """
 Unbounded Consumption Controller
 
-A summarization endpoint whose resource use is not bounded. Maps to OWASP LLM10:2025.
+A summarization endpoint whose resource use is not bounded. Maps to OWASP LLM06:2026.
 """
 
 from fastapi import Request
@@ -23,14 +23,14 @@ from ..service.vulnerabilities import (
 @vulnerable_llm_controller(
     name="unbounded_consumption",
     description=(
-        "<p>Unbounded Consumption maps to OWASP LLM10:2025. The lab attacks availability and cost "
+        "<p>Unbounded Consumption maps to OWASP LLM06:2026. The lab attacks availability and cost "
         "rather than data: a summarization endpoint that never limits how much a single request "
         "can consume lets one caller burn compute, money and queue capacity that everyone else "
         "shares.</p>"
         "<p>Every response reports the tokens the request billed. A level is bypassed when one "
         "request bills far more than a summary should.</p>"
         "<p>References:</p><ul>"
-        "<li><a href='https://genai.owasp.org/llmrisk/llm102025-unbounded-consumption/' target='_blank' rel='noopener'>OWASP LLM10:2025 Unbounded Consumption</a></li>"
+        "<li><a href='https://github.com/GenAI-Security-Project/GenAI-LLM-Top10/blob/main/2026/final/LLM06_UnboundedConsumption.md' target='_blank' rel='noopener'>OWASP LLM06:2026 Unbounded Consumption</a></li>"
         "</ul>"
     ),
 )

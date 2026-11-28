@@ -11,14 +11,14 @@
     1: {
       chapter: "Open Door",
       beat: "Acme shipped the summarizer as fast as it could. It accepts any amount of text and writes back as much as the model likes; the only rule is a sentence in the prompt.",
-      technical: "No Limits on Input or Output · OWASP LLM10",
+      technical: "No Limits on Input or Output · OWASP LLM06",
       inputCap: null,
       burst: false,
     },
     2: {
       chapter: "Half a Fence",
       beat: "After a customer pasted a novel into the box, Acme capped the input at a size that fits a real support ticket. Nobody thought about how much the service writes back.",
-      technical: "Input Capped, Output Unbounded · OWASP LLM10",
+      technical: "Input Capped, Output Unbounded · OWASP LLM06",
       inputCap: 600,
       inputCapUnit: "characters",
       burst: false,
@@ -26,7 +26,7 @@
     3: {
       chapter: "One at a Time Was Never the Rule",
       beat: "Acme capped the input and the output on every single request. Each one now behaves exactly like a real three-sentence summary should — Acme never asked how many of them could run at once.",
-      technical: "Input and Output Capped, No Concurrency Control · OWASP LLM10",
+      technical: "Input and Output Capped, No Concurrency Control · OWASP LLM06",
       // Capped in UTF-8 bytes, not characters: a character cap doesn't bound token
       // cost (multi-byte scripts and adversarial Unicode tokenize far more densely),
       // which is exactly the gap this level's own defense had to close. Counting

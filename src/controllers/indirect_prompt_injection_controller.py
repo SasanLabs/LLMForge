@@ -25,7 +25,7 @@ from ..service.vulnerabilities import (
         "<p>Indirect Prompt Injection is a stealthier variant of prompt injection where malicious instructions are embedded inside external content the LLM processes (web pages, documents, emails, tool outputs). When read, the model may interpret hidden instructions as legitimate commands and execute them, often without the user knowing.</p>"
         "<p>This is especially dangerous in agentic systems where the LLM can take actions on behalf of a user — a single poisoned document can silently hijack a session.</p>"
         "<p>References:</p><ul>"
-        "<li><a href='https://genai.owasp.org/llmrisk/llm01-prompt-injection/' target='_blank' rel='noopener'>OWASP LLM01:2025 Prompt Injection (Indirect)</a></li>"
+        "<li><a href='https://github.com/GenAI-Security-Project/GenAI-LLM-Top10/blob/main/2026/final/LLM01_PromptInjection.md' target='_blank' rel='noopener'>OWASP LLM01:2026 Prompt Injection (Indirect)</a></li>"
         "<li><a href='https://arxiv.org/abs/2302.12173' target='_blank' rel='noopener'>Not What You've Signed Up For — Indirect Prompt Injection Research</a></li>"
         "<li><a href='https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html' target='_blank' rel='noopener'>OWASP AI Agent Security Cheat Sheet</a></li>"
         "</ul>"
